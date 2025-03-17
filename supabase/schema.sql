@@ -159,10 +159,10 @@ insert into organizations (id, name, industry, size, website) values
   ('d4c74453-0ca4-4c79-a245-1a3b7e11eca1', 'Green Corp', 'Manufacturing', '1000+', 'greencorp.com'),
   ('f892b455-d409-4c81-9328-952a2e6882e2', 'Eco Solutions', 'Technology', '100-500', 'ecosolutions.com');
 
-insert into auth.users (id, email) values 
-  ('8d1e3562-e274-4a7b-b81c-e827b42b4256', 'admin@greencorp.com'),
-  ('c92f4b31-97b3-4da7-a3b7-1cd3ea3859ad', 'user@greencorp.com'),
-  ('e721f1d8-89a3-4da1-a242-e2f25c0b70a1', 'admin@ecosolutions.com');
+insert into auth.users (id, email, encrypted_password, email_confirmed_at) values 
+  ('8d1e3562-e274-4a7b-b81c-e827b42b4256', 'admin@greencorp.com', crypt('Admin123!', gen_salt('bf')), now()),
+  ('c92f4b31-97b3-4da7-b81c-e827b42b4259', 'user@greencorp.com', crypt('User123!', gen_salt('bf')), now()),
+  ('e721f1d8-89a3-4da1-a242-e2f25c0b70a1', 'admin@ecosolutions.com', crypt('Eco123!', gen_salt('bf')), now());
 
 insert into organization_members (organization_id, user_id, role) values 
   ('d4c74453-0ca4-4c79-a245-1a3b7e11eca1', '8d1e3562-e274-4a7b-b81c-e827b42b4256', 'owner'),
