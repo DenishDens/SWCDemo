@@ -21,7 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { User, Building, Bell, Key, Lock, Globe, Upload, RefreshCw, Copy, Eye, EyeOff } from "lucide-react"
-import { supabase } from '@/utils/supabaseClient'
+import { supabase } from '@/lib/supabase'
 import { toast } from '@/components/ui/toast'
 
 
