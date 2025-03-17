@@ -21,6 +21,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { User, Building, Bell, Key, Lock, Globe, Upload, RefreshCw, Copy, Eye, EyeOff } from "lucide-react"
+import { supabase } from '@/utils/supabaseClient'
+import { toast } from '@/components/ui/toast'
+
 
 export default function SettingsManager() {
   const [activeTab, setActiveTab] = useState("profile")
@@ -136,7 +139,37 @@ export default function SettingsManager() {
               </div>
 
               <div className="flex justify-end">
-                <Button className="bg-green-600 hover:bg-green-700">Save Changes</Button>
+                <Button 
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={async () => {
+                    const { data: { user } } = await supabase.auth.getUser()
+                    if (user) {
+                      const { error } = await supabase
+                        .from('profiles')
+                        .upsert({
+                          id: user.id,
+                          full_name: userData.name,
+                          job_title: userData.jobTitle,
+                          phone: userData.phone,
+                          org_name: userData.organization.name,
+                          org_industry: userData.organization.industry,
+                          org_size: userData.organization.size,
+                          org_address: userData.organization.address,
+                          org_website: userData.organization.website,
+                          notification_settings: userData.notificationSettings,
+                        })
+                      if (!error) {
+                        // Show success toast
+                        toast({
+                          title: "Success",
+                          description: "Profile updated successfully",
+                        })
+                      }
+                    }
+                  }}
+                >
+                  Save Changes
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -448,4 +481,3 @@ export default function SettingsManager() {
     </Tabs>
   )
 }
-
