@@ -22,8 +22,14 @@ async function cleanUsers() {
     
     if (profilesError) throw profilesError
 
-    const { error: usersError } = await supabaseAdmin.auth.admin
-      .deleteUsers('*')
+    // Get all users first
+    const { data: users } = await supabaseAdmin.auth.admin.listUsers()
+    
+    // Delete each user
+    for (const user of users.users) {
+      const { error: userError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
+      if (userError) throw userError
+    }
     
     if (usersError) throw usersError
 
