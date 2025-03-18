@@ -1,0 +1,47 @@
+Error: In HTML, whitespace text nodes cannot be a child of <tr>. Make sure you don't have any extra whitespace between tags on each line of your source code.
+This will cause a hydration error.
+
+  ...
+    <Primitive.div dir="ltr" data-orientation="horizontal" ref={null}>
+      <div dir="ltr" data-orientation="horizontal" ref={null}>
+        <_c>
+        <_c4 value="scope1">
+          <TabsContent ref={null} className="mt-2 ring-..." value="scope1">
+            <Presence present={true}>
+              <Primitive.div data-state="active" data-orientation="horizontal" role="tabpanel" ...>
+                <div data-state="active" data-orientation="horizontal" role="tabpanel" aria-labelledby="radix-:r9:..." ...>
+                  <div className="rounded-md...">
+                    <_c>
+                      <div className="relative w...">
+                        <table ref={null} className="w-full cap...">
+                          <_c2>
+                            <thead ref={null} className={"[&_tr]:b..."}>
+                              <_c8>
+>                               <tr
+>                                 ref={null}
+>                                 className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+>                               >
+                                  <_c10>
+                                  <_c10>
+                                  <_c10>
+                                  <_c10>
+                                  <_c10>
+                                  <_c10>
+>                                 {" "}
+                                  ...
+                          ...
+        ...
+
+    at createUnhandledError (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/console-error.js:27:49)
+    at handleClientError (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/client/components/react-dev-overlay/internal/helpers/use-error-handler.js:44:56)
+    at console.error (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/client/components/globals/intercept-console-error.js:48:56)
+    at validateTextNesting (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:2525:19)
+    at completeWork (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:13871:19)
+    at runWithFiberInDEV (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:544:16)
+    at completeUnitOfWork (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15200:19)
+    at performUnitOfWork (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15081:11)
+    at workLoopConcurrent (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15058:9)
+    at renderRootConcurrent (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15033:15)
+    at performWorkOnRoot (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:14350:13)
+    at performWorkOnRootViaSchedulerTask (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js:15955:7)
+    at MessagePort.performWorkUntilDeadline (webpack-internal:///(app-pages-browser)/./node_modules/.pnpm/next@15.1.0_@opentelemetry+api@1.9.0_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/scheduler/cjs/scheduler.development.js:44:48)
