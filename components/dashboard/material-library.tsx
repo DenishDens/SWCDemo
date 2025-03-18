@@ -20,13 +20,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Pencil, Trash2 } from "lucide-react"
 import { getMaterials, createMaterial, updateMaterial, deleteMaterial } from "@/lib/material-library"
 
+type Material = {
+  id: string;
+  name: string;
+  category: string;
+  unit: string;
+  factor: number;
+  source: string;
+  scope: string;
+};
+
+
 export default function MaterialLibrary() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [activeScope, setActiveScope] = useState("scope1")
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [selectedMaterial, setSelectedMaterial] = useState<any>(null)
+  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
   const [addDialogScope, setAddDialogScope] = useState("")
-  const [materials, setMaterials] = useState<Record<string, any[]>>({
+  const [materials, setMaterials] = useState<Record<string, Material[]>>({
     scope1: [],
     scope2: [],
     scope3: [],
@@ -61,7 +72,7 @@ export default function MaterialLibrary() {
           if (!acc[scope]) acc[scope] = []
           acc[scope].push(material)
           return acc
-        }, {} as Record<string, any[]>)
+        }, {} as Record<string, Material[]>)
         setMaterials(grouped)
       } catch (error) {
         console.error('Error fetching materials:', error)
@@ -117,7 +128,7 @@ export default function MaterialLibrary() {
     }
   }
 
-  const handleEditMaterial = (material: any) => {
+  const handleEditMaterial = (material: Material) => {
     setSelectedMaterial(material)
     setIsEditDialogOpen(true)
   }
@@ -339,7 +350,7 @@ export default function MaterialLibrary() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleUpdateMaterial(selectedMaterial.id, {name: "", scope: "", category: "", unit: "", factor: 0, source: ""})}>
+            <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleUpdateMaterial(selectedMaterial?.id || "", {name: "", scope: "", category: "", unit: "", factor: 0, source: ""})}>
               Save Changes
             </Button>
           </DialogFooter>
