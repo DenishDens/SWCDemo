@@ -63,8 +63,8 @@ INSERT INTO projects (id, organization_id, name, description, type, code, status
   ('d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8f', 'f892b455-d409-4c81-9328-952a2e6882e2', 'Distribution Center', 'Logistics Hub', 'business_unit', 'DC-001', 'active', 'Chicago', 'f832c945-b123-4567-89ab-cdef01234567'),
 
   -- Sustainable Retail Business Units
-  ('e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8g9f', 'c123d456-e789-4f01-b234-567c89d01e2f', 'Flagship Store', 'Main Retail Location', 'business_unit', 'FS-001', 'active', 'Chicago', 'a987f654-3210-4321-b098-76543c210987'),
-  ('f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8g9h0f', 'c123d456-e789-4f01-b234-567c89d01e2f', 'Regional Office', 'Midwest HQ', 'business_unit', 'RO-001', 'active', 'Milwaukee', 'a987f654-3210-4321-b098-76543c210987');
+  ('e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f89af', 'c123d456-e789-4f01-b234-567c89d01e2f', 'Flagship Store', 'Main Retail Location', 'business_unit', 'FS-001', 'active', 'Chicago', 'a987f654-3210-4321-b098-76543c210987'),
+  ('f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f890a0f', 'c123d456-e789-4f01-b234-567c89d01e2f', 'Regional Office', 'Midwest HQ', 'business_unit', 'RO-001', 'active', 'Milwaukee', 'a987f654-3210-4321-b098-76543c210987');
 
 -- Create Projects Under Business Units
 INSERT INTO projects (organization_id, name, description, type, code, status, parent_id, created_by) VALUES 
