@@ -25,42 +25,7 @@ export default function MaterialLibrary() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedMaterial, setSelectedMaterial] = useState<any>(null)
   const [addDialogScope, setAddDialogScope] = useState("")
-  
-  const scopeCategories = {
-    scope1: [
-      "Stationary Combustion",
-      "Mobile Combustion", 
-      "Process Emissions",
-      "Fugitive Emissions"
-    ],
-    scope2: [
-      "Purchased Electricity",
-      "Purchased Steam",
-      "Purchased Heating",
-      "Purchased Cooling"
-    ],
-    scope3: [
-      "Purchased Goods & Services",
-      "Capital Goods",
-      "Fuel- and Energy-Related Activities",
-      "Upstream Transportation & Distribution",
-      "Waste Generated in Operations",
-      "Business Travel",
-      "Employee Commuting",
-      "Upstream Leased Assets"
-    ],
-    downstream: [
-      "Downstream Transportation & Distribution",
-      "Processing of Sold Products",
-      "Use of Sold Products",
-      "End-of-Life Treatment of Sold Products",
-      "Downstream Leased Assets",
-      "Franchises",
-      "Investments"
-    ]
-  }
 
-  // Define categories for each scope based on GHG Protocol
   const scopeCategories = {
     scope1: ["Stationary Combustion", "Mobile Combustion", "Process Emissions", "Fugitive Emissions"],
     scope2: ["Purchased Electricity", "Purchased Heat", "Purchased Steam", "Purchased Cooling"],
@@ -148,6 +113,34 @@ export default function MaterialLibrary() {
     ],
   }
 
+  const categoryDescriptions = {
+    "Stationary Combustion": "Emissions from stationary sources like boilers and furnaces.",
+    "Mobile Combustion": "Emissions from mobile sources like cars, trucks, and airplanes.",
+    "Process Emissions": "Emissions that are released during industrial processes.",
+    "Fugitive Emissions": "Unintentional releases of greenhouse gases from equipment.",
+    "Purchased Electricity": "Emissions associated with the generation of electricity purchased by the company.",
+    "Purchased Heat": "Emissions associated with the generation of heat purchased by the company.",
+    "Purchased Steam": "Emissions associated with the generation of steam purchased by the company.",
+    "Purchased Cooling": "Emissions associated with the generation of cooling purchased by the company.",
+    "Purchased Goods and Services": "Emissions embedded in goods and services purchased by the company.",
+    "Capital Goods": "Emissions associated with the manufacturing and transportation of capital goods.",
+    "Fuel and Energy-Related Activities": "Emissions from the use of fuel and energy.",
+    "Transportation and Distribution (Upstream)": "Emissions from the transportation and distribution of materials to the company.",
+    "Waste Generated in Operations": "Emissions from the generation and disposal of waste.",
+    "Business Travel": "Emissions from business-related travel.",
+    "Employee Commuting": "Emissions from employees commuting to work.",
+    "Leased Assets (Upstream)": "Emissions from leased assets used in the company's operations.",
+    "Transportation and Distribution (Downstream)": "Emissions from the transportation and distribution of products sold by the company.",
+    "Processing of Sold Products": "Emissions from the processing of products sold by the company.",
+    "Use of Sold Products": "Emissions from the use of products sold by the company.",
+    "End-of-Life Treatment of Sold Products": "Emissions from the end-of-life treatment of products sold by the company.",
+    "Leased Assets (Downstream)": "Emissions from leased assets related to the company's products.",
+    "Franchises": "Emissions from franchise operations.",
+    "Investments": "Emissions associated with investments made by the company."
+
+  }
+
+
   const handleEditMaterial = (material: any) => {
     setSelectedMaterial(material)
     setIsEditDialogOpen(true)
@@ -205,44 +198,22 @@ export default function MaterialLibrary() {
                   <Label htmlFor="category" className="text-right">
                     Category
                   </Label>
-                  <Select>
-                    <SelectTrigger id="category" className="col-span-3">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {addDialogScope && scopeCategories[addDialogScope as keyof typeof scopeCategories].map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>dDialogScope(value)}>
-                    <SelectTrigger id="scope" className="col-span-3">
-                      <SelectValue placeholder="Select scope" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="scope1">Scope 1</SelectItem>
-                      <SelectItem value="scope2">Scope 2</SelectItem>
-                      <SelectItem value="scope3">Scope 3</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="category" className="text-right">
-                    Category
-                  </Label>
-                  <Select>
-                    <SelectTrigger id="category" className="col-span-3">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {scopeCategories[addDialogScope as keyof typeof scopeCategories].map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2 col-span-3">
+                    <Select>
+                      <SelectTrigger id="category">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {addDialogScope && scopeCategories[addDialogScope as keyof typeof scopeCategories].map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {/* Display description here */}
+                    {/*<p className="text-sm text-muted-foreground">Description will go here</p>*/}
+                  </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="unit" className="text-right">
@@ -346,18 +317,21 @@ export default function MaterialLibrary() {
                 <Label htmlFor="edit-category" className="text-right">
                   Category
                 </Label>
-                <Select defaultValue={selectedMaterial.category}>
-                  <SelectTrigger id="edit-category" className="col-span-3">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {scopeCategories[activeScope as keyof typeof scopeCategories].map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2 col-span-3">
+                  <Select defaultValue={selectedMaterial.category}>
+                    <SelectTrigger id="edit-category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {scopeCategories[activeScope as keyof typeof scopeCategories].map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">{categoryDescriptions[selectedMaterial.category]}</p>
+                </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-unit" className="text-right">
@@ -398,4 +372,3 @@ export default function MaterialLibrary() {
     </>
   )
 }
-
