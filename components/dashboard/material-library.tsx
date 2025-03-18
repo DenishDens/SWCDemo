@@ -24,7 +24,41 @@ export default function MaterialLibrary() {
   const [activeScope, setActiveScope] = useState("scope1")
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedMaterial, setSelectedMaterial] = useState<any>(null)
-  const [addDialogScope, setAddDialogScope] = useState("scope1")
+  const [addDialogScope, setAddDialogScope] = useState("")
+  
+  const scopeCategories = {
+    scope1: [
+      "Stationary Combustion",
+      "Mobile Combustion", 
+      "Process Emissions",
+      "Fugitive Emissions"
+    ],
+    scope2: [
+      "Purchased Electricity",
+      "Purchased Steam",
+      "Purchased Heating",
+      "Purchased Cooling"
+    ],
+    scope3: [
+      "Purchased Goods & Services",
+      "Capital Goods",
+      "Fuel- and Energy-Related Activities",
+      "Upstream Transportation & Distribution",
+      "Waste Generated in Operations",
+      "Business Travel",
+      "Employee Commuting",
+      "Upstream Leased Assets"
+    ],
+    downstream: [
+      "Downstream Transportation & Distribution",
+      "Processing of Sold Products",
+      "Use of Sold Products",
+      "End-of-Life Treatment of Sold Products",
+      "Downstream Leased Assets",
+      "Franchises",
+      "Investments"
+    ]
+  }
 
   // Define categories for each scope based on GHG Protocol
   const scopeCategories = {
@@ -156,6 +190,33 @@ export default function MaterialLibrary() {
                     Scope
                   </Label>
                   <Select onValueChange={(value) => setAddDialogScope(value)}>
+                    <SelectTrigger id="scope" className="col-span-3">
+                      <SelectValue placeholder="Select scope" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="scope1">Scope 1</SelectItem>
+                      <SelectItem value="scope2">Scope 2</SelectItem>
+                      <SelectItem value="scope3">Scope 3</SelectItem>
+                      <SelectItem value="downstream">Downstream Emissions</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="category" className="text-right">
+                    Category
+                  </Label>
+                  <Select>
+                    <SelectTrigger id="category" className="col-span-3">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {addDialogScope && scopeCategories[addDialogScope as keyof typeof scopeCategories].map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>dDialogScope(value)}>
                     <SelectTrigger id="scope" className="col-span-3">
                       <SelectValue placeholder="Select scope" />
                     </SelectTrigger>
