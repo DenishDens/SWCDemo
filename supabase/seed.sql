@@ -1,7 +1,7 @@
 
 -- First, let's get an organization ID to reference
 WITH org_id AS (
-  SELECT id FROM organizations LIMIT 1
+  SELECT id FROM organizations WHERE name = 'Green Corp' LIMIT 1
 )
 INSERT INTO materials (name, category, scope, unit, emission_factor, source, organization_id) 
 VALUES 
