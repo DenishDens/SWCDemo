@@ -1,5 +1,14 @@
+-- Drop existing tables and extensions
+DROP EXTENSION IF EXISTS "uuid-ossp" CASCADE;
+DROP TABLE IF EXISTS public.project_members CASCADE;
+DROP TABLE IF EXISTS public.projects CASCADE;
+DROP TABLE IF EXISTS public.materials CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
+DROP TABLE IF EXISTS public.organization_members CASCADE;
+DROP TABLE IF EXISTS public.organizations CASCADE;
+
 -- Enable UUID extension
-create extension if not exists "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Enable Row Level Security
 alter table auth.users enable row level security;
