@@ -231,10 +231,7 @@ export default function MaterialLibrary() {
                     </TableHeader>
                     <TableBody>
                       {filteredMaterials(scope).map((material) => (
-                        <TableRow key={material.id} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                          <TableCell className="font-medium">{material.name}</TableCell>
-                          <TableCell>{material.category}</TableCell>
-                          <TableCell>{material.unit}</TableCell>
+                        <TableRow key={material.id}><TableCell className="font-medium">{material.name}</TableCell><TableCell>{material.category}</TableCell><TableCell>{material.unit}</TableCell>
                           <TableCell className="text-right">{material.factor.toFixed(2)}</TableCell>
                           <TableCell>{material.source}</TableCell>
                           <TableCell>{material.materialCode}</TableCell> {/* Added Material Code cell */}
