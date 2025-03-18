@@ -1,0 +1,26 @@
+/home/runner/workspace/node_modules/.pnpm/ts-node@10.9.2_@types+node@22.13.10_typescript@5.8.2/node_modules/ts-node/src/index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+scripts/clean-users.ts:26:8 - error TS2551: Property 'deleteUsers' does not exist on type 'GoTrueAdminApi'. Did you mean 'deleteUser'?
+
+26       .deleteUsers('*')
+          ~~~~~~~~~~~
+
+  node_modules/.pnpm/@supabase+auth-js@2.68.0/node_modules/@supabase/auth-js/dist/module/GoTrueAdminApi.d.ts:95:5
+    95     deleteUser(id: string, shouldSoftDelete?: boolean): Promise<UserResponse>;
+           ~~~~~~~~~~
+    'deleteUser' is declared here.
+
+    at createTSError (/home/runner/workspace/node_modules/.pnpm/ts-node@10.9.2_@types+node@22.13.10_typescript@5.8.2/node_modules/ts-node/src/index.ts:859:12)
+    at reportTSError (/home/runner/workspace/node_modules/.pnpm/ts-node@10.9.2_@types+node@22.13.10_typescript@5.8.2/node_modules/ts-node/src/index.ts:863:19)
+    at getOutput (/home/runner/workspace/node_modules/.pnpm/ts-node@10.9.2_@types+node@22.13.10_typescript@5.8.2/node_modules/ts-node/src/index.ts:1077:36)
+    at Object.compile (/home/runner/workspace/node_modules/.pnpm/ts-node@10.9.2_@types+node@22.13.10_typescript@5.8.2/node_modules/ts-node/src/index.ts:1433:41)
+    at Module.m._compile (/home/runner/workspace/node_modules/.pnpm/ts-node@10.9.2_@types+node@22.13.10_typescript@5.8.2/node_modules/ts-node/src/index.ts:1617:30)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1548:10)
+    at Object.require.extensions.<computed> [as .ts] (/home/runner/workspace/node_modules/.pnpm/ts-node@10.9.2_@types+node@22.13.10_typescript@5.8.2/node_modules/ts-node/src/index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1288:32)
+    at Function.Module._load (node:internal/modules/cjs/loader:1104:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:173:12) {
+  diagnosticCodes: [ 2551 ]
+}
