@@ -20,8 +20,4 @@ export const supabase = createClient(
   }
 )
 
-// Initialize database schema
-const schemaSQL = await fetch('/supabase/schema.sql').then(r => r.text())
-const seedSQL = await fetch('/supabase/seed.sql').then(r => r.text())
-await supabase.sql(schemaSQL)
-await supabase.sql(seedSQL)
+// Schema is managed through Supabase dashboard
