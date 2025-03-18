@@ -62,8 +62,8 @@ export default function LoginPage() {
             />
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
+          <Button type="submit" className="w-full" isLoading={loading}>
+            Sign in
           </Button>
         </form>
         <div className="text-center text-sm">
