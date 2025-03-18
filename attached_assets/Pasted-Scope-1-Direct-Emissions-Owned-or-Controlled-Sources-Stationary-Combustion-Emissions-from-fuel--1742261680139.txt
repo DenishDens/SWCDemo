@@ -1,0 +1,28 @@
+Scope 1: Direct Emissions (Owned or Controlled Sources)
+Stationary Combustion – Emissions from fuel combustion in owned assets (e.g., boilers, furnaces, generators).
+Mobile Combustion – Emissions from vehicles and machinery (e.g., company-owned trucks, ships, aircraft).
+Process Emissions – Emissions from chemical processes (e.g., cement production, steel manufacturing).
+Fugitive Emissions – Leaks from equipment (e.g., refrigerants, methane leaks from pipelines).
+Scope 2: Indirect Emissions from Purchased Energy
+Purchased Electricity – Emissions from power used in operations (factories, offices, data centers).
+Purchased Steam – Energy sourced externally for heating or industrial processes.
+Purchased Heating – External district heating networks or third-party heat suppliers.
+Purchased Cooling – External district cooling networks or HVAC system emissions.
+Scope 3: Indirect Emissions from Value Chain (Upstream & Downstream)
+Upstream Emissions (Before Company Operations)
+Purchased Goods & Services – Raw materials, office supplies, manufacturing inputs.
+Capital Goods – Emissions from production of long-term assets (machinery, vehicles, buildings).
+Fuel- and Energy-Related Activities (Not in Scope 1 or 2) – Extraction, refining, and transportation of fuels used in operations.
+Upstream Transportation & Distribution – Emissions from transporting goods before reaching the company.
+Waste Generated in Operations – Landfill, recycling, and treatment of operational waste.
+Business Travel – Flights, hotels, rental cars for employee travel.
+Employee Commuting – Emissions from employees traveling to work (cars, public transport).
+Upstream Leased Assets – Emissions from leased buildings, vehicles, or equipment not owned by the company.
+Downstream Emissions (After Company Operations)
+Downstream Transportation & Distribution – Emissions from shipping products to customers.
+Processing of Sold Products – Additional emissions when a customer modifies a product before use.
+Use of Sold Products – Emissions generated when customers use the product (e.g., gasoline in cars, electricity for appliances).
+End-of-Life Treatment of Sold Products – Recycling, landfill, or disposal emissions from products after use.
+Downstream Leased Assets – Emissions from leased properties or equipment operated by customers.
+Franchises – Emissions from business operations under the company’s brand (franchise stores, hotels).
+Investments – Emissions from financial activities (loans, investments, pensions).
