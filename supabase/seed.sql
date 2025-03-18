@@ -77,8 +77,8 @@ INSERT INTO projects (organization_id, name, description, type, code, status, pa
   ('f892b455-d409-4c81-9328-952a2e6882e2', 'Logistics Efficiency', 'Route Optimization', 'project', 'PRJ-004', 'active', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8f', 'f832c945-b123-4567-89ab-cdef01234567'),
 
   -- Sustainable Retail Projects
-  ('c123d456-e789-4f01-b234-567c89d01e2f', 'LED Lighting Upgrade', 'Store Lighting Retrofit', 'project', 'PRJ-005', 'active', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8g9f', 'a987f654-3210-4321-b098-76543c210987'),
-  ('c123d456-e789-4f01-b234-567c89d01e2f', 'Waste Reduction', 'Zero Waste Program', 'project', 'PRJ-006', 'active', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8g9h0f', 'a987f654-3210-4321-b098-76543c210987');
+  ('c123d456-e789-4f01-b234-567c89d01e2f', 'LED Lighting Upgrade', 'Store Lighting Retrofit', 'project', 'PRJ-005', 'active', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f89af', 'a987f654-3210-4321-b098-76543c210987'),
+  ('c123d456-e789-4f01-b234-567c89d01e2f', 'Waste Reduction', 'Zero Waste Program', 'project', 'PRJ-006', 'active', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f890a0f', 'a987f654-3210-4321-b098-76543c210987');
 
 -- Create Project Members
 INSERT INTO project_members (project_id, user_id, role) 
