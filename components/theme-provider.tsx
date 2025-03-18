@@ -1,3 +1,4 @@
+
 'use client'
 
 import * as React from 'react'
@@ -7,5 +8,9 @@ import {
 } from 'next-themes'
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+  return (
+    <div suppressHydrationWarning>
+      <NextThemesProvider {...props}>{children}</NextThemesProvider>
+    </div>
+  )
 }
