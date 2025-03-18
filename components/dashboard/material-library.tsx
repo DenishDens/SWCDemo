@@ -218,9 +218,10 @@ export default function MaterialLibrary() {
               <TabsTrigger value="scope1">Scope 1</TabsTrigger>
               <TabsTrigger value="scope2">Scope 2</TabsTrigger>
               <TabsTrigger value="scope3">Scope 3</TabsTrigger>
+              <TabsTrigger value="downstream">Downstream Emissions</TabsTrigger>
             </TabsList>
 
-            {(["scope1", "scope2", "scope3"] as const).map((scope) => (
+            {(["scope1", "scope2", "scope3", "downstream"] as const).map((scope) => (
               <TabsContent key={scope} value={scope}>
                 <div className="rounded-md border">
                   <Table>
