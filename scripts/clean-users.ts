@@ -14,6 +14,7 @@ const supabaseAdmin = createClient(
 
 async function cleanUsers() {
   try {
+    // Clean existing data
     const { error: profilesError } = await supabaseAdmin
       .from('profiles')
       .delete()
@@ -26,9 +27,15 @@ async function cleanUsers() {
     
     if (usersError) throw usersError
 
-    console.log('Successfully cleaned users and profiles')
+    // Read and execute schema.sql
+    const fs = require('fs')
+    const schema = fs.readFileSync('supabase/schema.sql', 'utf8')
+    const { error: schemaError } = await supabaseAdmin.rpc('exec_sql', { sql: schema })
+    if (schemaError) throw schemaError
+
+    console.log('Successfully cleaned users and reset schema')
   } catch (error) {
-    console.error('Error cleaning users:', error)
+    console.error('Error:', error)
   }
 }
 
