@@ -57,17 +57,65 @@ create table public.emission_factors (
 );
 alter table public.emission_factors enable row level security;
 
--- Create projects table
+-- Create projects table (supports both business units and projects)
 create table public.projects (
   id uuid default uuid_generate_v4() primary key,
   organization_id uuid references public.organizations on delete cascade,
   name text not null,
   description text,
-  status text default 'active',
+  type text not null check (type in ('business_unit', 'project')),
+  code text not null,
+  status text not null check (status in ('active', 'inactive', 'draft')) default 'draft',
+  location text,
+  parent_id uuid references public.projects(id),
+  emissions_data jsonb default '{}'::jsonb,
   created_at timestamp with time zone default timezone('utc'::text, now()),
   updated_at timestamp with time zone default timezone('utc'::text, now()),
-  created_by uuid references auth.users on delete set null
+  created_by uuid references auth.users on delete set null,
+  updated_by uuid references auth.users on delete set null,
+  unique(organization_id, code)
 );
+
+-- Create project_members table
+create table public.project_members (
+  id uuid default uuid_generate_v4() primary key,
+  project_id uuid references public.projects on delete cascade,
+  user_id uuid references auth.users on delete cascade,
+  role text not null check (role in ('owner', 'admin', 'member')),
+  created_at timestamp with time zone default timezone('utc'::text, now()),
+  updated_at timestamp with time zone default timezone('utc'::text, now()),
+  unique(project_id, user_id)
+);
+
+-- Add RLS policies
+alter table public.projects enable row level security;
+alter table public.project_members enable row level security;
+
+create policy "Users can view projects in their organization" on projects
+  for select using (
+    auth.uid() in (
+      select user_id from organization_members 
+      where organization_id = projects.organization_id
+    )
+  );
+
+create policy "Members can manage projects" on projects
+  for all using (
+    auth.uid() in (
+      select user_id from organization_members 
+      where organization_id = projects.organization_id
+    )
+  );
+
+create policy "Users can view project members" on project_members
+  for select using (
+    auth.uid() in (
+      select user_id from organization_members 
+      where organization_id = (
+        select organization_id from projects where id = project_members.project_id
+      )
+    )
+  );
 alter table public.projects enable row level security;
 
 -- RLS Policies
