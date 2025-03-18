@@ -48,12 +48,81 @@ export default function MaterialLibrary() {
     ],
   }
 
-  // Mock data - in a real app, this would come from your API
-  const materials = {
-    downstream: [],
-    scope1: [
-      {
-        id: 1,
+  const [materials, setMaterials] = useState<Record<string, Material[]>>({
+    scope1: [],
+    scope2: [],
+    scope3: [],
+    downstream: []
+  })
+
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      try {
+        const data = await getMaterials('your-org-id') // Replace with actual org ID
+        // Group materials by scope
+        const grouped = data.reduce((acc, material) => {
+          const scope = material.scope.toLowerCase()
+          if (!acc[scope]) acc[scope] = []
+          acc[scope].push(material)
+          return acc
+        }, {} as Record<string, Material[]>)
+        setMaterials(grouped)
+      } catch (error) {
+        console.error('Error fetching materials:', error)
+      }
+    }
+    fetchMaterials()
+  }, [])
+
+  const handleAddMaterial = async (formData: any) => {
+    try {
+      const newMaterial = await createMaterial({
+        ...formData,
+        organization_id: 'your-org-id' // Replace with actual org ID
+      })
+      // Update state with new material
+      setMaterials(prev => {
+        const scope = newMaterial.scope.toLowerCase()
+        return {
+          ...prev,
+          [scope]: [...(prev[scope] || []), newMaterial]
+        }
+      })
+      setIsAddDialogOpen(false)
+    } catch (error) {
+      console.error('Error adding material:', error)
+    }
+  }
+
+  const handleUpdateMaterial = async (id: string, formData: any) => {
+    try {
+      const updatedMaterial = await updateMaterial(id, formData)
+      // Update state with updated material
+      setMaterials(prev => {
+        const scope = updatedMaterial.scope.toLowerCase()
+        return {
+          ...prev,
+          [scope]: prev[scope].map(m => m.id === id ? updatedMaterial : m)
+        }
+      })
+      setIsEditDialogOpen(false)
+    } catch (error) {
+      console.error('Error updating material:', error)
+    }
+  }
+
+  const handleDeleteMaterial = async (id: string, scope: string) => {
+    try {
+      await deleteMaterial(id)
+      // Remove material from state
+      setMaterials(prev => ({
+        ...prev,
+        [scope]: prev[scope].filter(m => m.id !== id)
+      }))
+    } catch (error) {
+      console.error('Error deleting material:', error)
+    }
+  }
         name: "Natural Gas",
         category: "Stationary Combustion",
         unit: "m³",
