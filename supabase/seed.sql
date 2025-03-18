@@ -7,13 +7,13 @@ INSERT INTO organizations (id, name, industry, size, website, address) VALUES
   ('f892b455-d409-4c81-9328-952a2e6882e2', 'EcoManufacturing Inc', 'Manufacturing', '1000+', 'ecomanufacturing.com', '456 Industrial Blvd, Detroit, MI 48226'),
   ('c123d456-e789-4f01-b234-567c89d01e2f', 'Sustainable Retail Group', 'Retail', '100-500', 'sustainableretail.com', '789 Market St, Chicago, IL 60601');
 
--- Create Users with Encrypted Passwords
-INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at) VALUES 
-  ('8d1e3562-e274-4a7b-b81c-e827b42b4256', 'admin@greentech.com', crypt('GreenTech2024!', gen_salt('bf')), now()),
-  ('c92f4b31-97b3-4da7-b81c-e827b42b4259', 'manager@greentech.com', crypt('Manager2024!', gen_salt('bf')), now()),
-  ('e721f1d8-89a3-4da1-a242-e2f25c0b70a1', 'analyst@greentech.com', crypt('Analyst2024!', gen_salt('bf')), now()),
-  ('f832c945-b123-4567-89ab-cdef01234567', 'admin@ecomanufacturing.com', crypt('EcoMfg2024!', gen_salt('bf')), now()),
-  ('a987f654-3210-4321-b098-76543c210987', 'admin@sustainableretail.com', crypt('SusRetail2024!', gen_salt('bf')), now());
+-- Users should be created through Supabase Auth UI/API
+-- The following user IDs are referenced in seed data:
+-- 8d1e3562-e274-4a7b-b81c-e827b42b4256 (admin@greentech.com)
+-- c92f4b31-97b3-4da7-b81c-e827b42b4259 (manager@greentech.com)
+-- e721f1d8-89a3-4da1-a242-e2f25c0b70a1 (analyst@greentech.com)
+-- f832c945-b123-4567-89ab-cdef01234567 (admin@ecomanufacturing.com)
+-- a987f654-3210-4321-b098-76543c210987 (admin@sustainableretail.com)
 
 -- Create Organization Members with Different Roles
 INSERT INTO organization_members (organization_id, user_id, role) VALUES 
