@@ -51,6 +51,7 @@ export default function MaterialLibrary() {
 
   // Mock data - in a real app, this would come from your API
   const materials = {
+    downstream: [],
     scope1: [
       {
         id: 1,
