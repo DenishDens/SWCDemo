@@ -1,4 +1,3 @@
-
 -- Clean existing data
 TRUNCATE TABLE organizations, organization_members, profiles, materials, projects, project_members CASCADE;
 
@@ -42,12 +41,12 @@ INSERT INTO materials (name, category, scope, unit, emission_factor, source, org
   ('Diesel Fleet', 'Mobile Combustion', 'scope1', 'L', 2.68, 'GHG Protocol', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', '8d1e3562-e274-4a7b-b81c-e827b42b4256'),
   ('Grid Electricity', 'Purchased Energy', 'scope2', 'kWh', 0.42, 'EPA eGRID', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', 'c92f4b31-97b3-4da7-b81c-e827b42b4259'),
   ('Business Flights', 'Business Travel', 'scope3', 'km', 0.14, 'DEFRA', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', 'c92f4b31-97b3-4da7-b81c-e827b42b4259'),
-  
+
   -- EcoManufacturing Materials
   ('Process Heat', 'Manufacturing', 'scope1', 'MMBtu', 53.11, 'EPA', 'f892b455-d409-4c81-9328-952a2e6882e2', 'f832c945-b123-4567-89ab-cdef01234567'),
   ('Refrigerants', 'Fugitive Emissions', 'scope1', 'kg', 1430.0, 'EPA', 'f892b455-d409-4c81-9328-952a2e6882e2', 'f832c945-b123-4567-89ab-cdef01234567'),
   ('Purchased Steam', 'Purchased Energy', 'scope2', 'MMBtu', 66.33, 'EPA', 'f892b455-d409-4c81-9328-952a2e6882e2', 'f832c945-b123-4567-89ab-cdef01234567'),
-  
+
   -- Sustainable Retail Materials
   ('Refrigeration', 'Stationary Combustion', 'scope1', 'kg', 1810.0, 'EPA', 'c123d456-e789-4f01-b234-567c89d01e2f', 'a987f654-3210-4321-b098-76543c210987'),
   ('Store Electricity', 'Purchased Energy', 'scope2', 'kWh', 0.45, 'EPA eGRID', 'c123d456-e789-4f01-b234-567c89d01e2f', 'a987f654-3210-4321-b098-76543c210987'),
@@ -58,28 +57,28 @@ INSERT INTO projects (id, organization_id, name, description, type, code, status
   -- GreenTech Solutions Business Units
   ('a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', 'Headquarters', 'Corporate HQ', 'business_unit', 'HQ-001', 'active', 'San Francisco', '8d1e3562-e274-4a7b-b81c-e827b42b4256'),
   ('b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', 'R&D Center', 'Research Facility', 'business_unit', 'RD-001', 'active', 'San Jose', '8d1e3562-e274-4a7b-b81c-e827b42b4256'),
-  
+
   -- EcoManufacturing Business Units
   ('c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f', 'f892b455-d409-4c81-9328-952a2e6882e2', 'Main Plant', 'Primary Manufacturing', 'business_unit', 'MP-001', 'active', 'Detroit', 'f832c945-b123-4567-89ab-cdef01234567'),
-  ('d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8g', 'f892b455-d409-4c81-9328-952a2e6882e2', 'Distribution Center', 'Logistics Hub', 'business_unit', 'DC-001', 'active', 'Chicago', 'f832c945-b123-4567-89ab-cdef01234567'),
-  
+  ('d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8f', 'f892b455-d409-4c81-9328-952a2e6882e2', 'Distribution Center', 'Logistics Hub', 'business_unit', 'DC-001', 'active', 'Chicago', 'f832c945-b123-4567-89ab-cdef01234567'),
+
   -- Sustainable Retail Business Units
-  ('e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8g9h', 'c123d456-e789-4f01-b234-567c89d01e2f', 'Flagship Store', 'Main Retail Location', 'business_unit', 'FS-001', 'active', 'Chicago', 'a987f654-3210-4321-b098-76543c210987'),
-  ('f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8g9h0i', 'c123d456-e789-4f01-b234-567c89d01e2f', 'Regional Office', 'Midwest HQ', 'business_unit', 'RO-001', 'active', 'Milwaukee', 'a987f654-3210-4321-b098-76543c210987');
+  ('e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8g9f', 'c123d456-e789-4f01-b234-567c89d01e2f', 'Flagship Store', 'Main Retail Location', 'business_unit', 'FS-001', 'active', 'Chicago', 'a987f654-3210-4321-b098-76543c210987'),
+  ('f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8g9h0f', 'c123d456-e789-4f01-b234-567c89d01e2f', 'Regional Office', 'Midwest HQ', 'business_unit', 'RO-001', 'active', 'Milwaukee', 'a987f654-3210-4321-b098-76543c210987');
 
 -- Create Projects Under Business Units
 INSERT INTO projects (organization_id, name, description, type, code, status, parent_id, created_by) VALUES 
   -- GreenTech Solutions Projects
   ('d4c74453-0ca4-4c79-a245-1a3b7e11eca1', 'Solar Installation', 'Rooftop Solar Project', 'project', 'PRJ-001', 'active', 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', '8d1e3562-e274-4a7b-b81c-e827b42b4256'),
   ('d4c74453-0ca4-4c79-a245-1a3b7e11eca1', 'EV Fleet Transition', 'Vehicle Electrification', 'project', 'PRJ-002', 'draft', 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e', 'c92f4b31-97b3-4da7-b81c-e827b42b4259'),
-  
+
   -- EcoManufacturing Projects
   ('f892b455-d409-4c81-9328-952a2e6882e2', 'Process Optimization', 'Energy Efficiency Initiative', 'project', 'PRJ-003', 'active', 'c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f', 'f832c945-b123-4567-89ab-cdef01234567'),
-  ('f892b455-d409-4c81-9328-952a2e6882e2', 'Logistics Efficiency', 'Route Optimization', 'project', 'PRJ-004', 'active', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8g', 'f832c945-b123-4567-89ab-cdef01234567'),
-  
+  ('f892b455-d409-4c81-9328-952a2e6882e2', 'Logistics Efficiency', 'Route Optimization', 'project', 'PRJ-004', 'active', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8f', 'f832c945-b123-4567-89ab-cdef01234567'),
+
   -- Sustainable Retail Projects
-  ('c123d456-e789-4f01-b234-567c89d01e2f', 'LED Lighting Upgrade', 'Store Lighting Retrofit', 'project', 'PRJ-005', 'active', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8g9h', 'a987f654-3210-4321-b098-76543c210987'),
-  ('c123d456-e789-4f01-b234-567c89d01e2f', 'Waste Reduction', 'Zero Waste Program', 'project', 'PRJ-006', 'active', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8g9h0i', 'a987f654-3210-4321-b098-76543c210987');
+  ('c123d456-e789-4f01-b234-567c89d01e2f', 'LED Lighting Upgrade', 'Store Lighting Retrofit', 'project', 'PRJ-005', 'active', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8g9f', 'a987f654-3210-4321-b098-76543c210987'),
+  ('c123d456-e789-4f01-b234-567c89d01e2f', 'Waste Reduction', 'Zero Waste Program', 'project', 'PRJ-006', 'active', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8g9h0f', 'a987f654-3210-4321-b098-76543c210987');
 
 -- Create Project Members
 INSERT INTO project_members (project_id, user_id, role) 
