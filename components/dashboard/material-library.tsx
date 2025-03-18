@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Pencil, Trash2 } from "lucide-react"
+import { getMaterials, createMaterial, updateMaterial, deleteMaterial } from "@/lib/material-library"
 
 export default function MaterialLibrary() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -25,47 +26,42 @@ export default function MaterialLibrary() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedMaterial, setSelectedMaterial] = useState<any>(null)
   const [addDialogScope, setAddDialogScope] = useState("")
-
-  const scopeCategories = {
-    scope1: ["Stationary Combustion", "Mobile Combustion", "Process Emissions", "Fugitive Emissions"],
-    scope2: ["Purchased Electricity", "Purchased Heat", "Purchased Steam", "Purchased Cooling"],
-    scope3: [
-      "Purchased Goods and Services",
-      "Capital Goods",
-      "Fuel and Energy-Related Activities",
-      "Transportation and Distribution (Upstream)",
-      "Waste Generated in Operations",
-      "Business Travel",
-      "Employee Commuting",
-      "Leased Assets (Upstream)",
-      "Transportation and Distribution (Downstream)",
-      "Processing of Sold Products",
-      "Use of Sold Products",
-      "End-of-Life Treatment of Sold Products",
-      "Leased Assets (Downstream)",
-      "Franchises",
-      "Investments",
-    ],
-  }
-
-  const [materials, setMaterials] = useState<Record<string, Material[]>>({
+  const [materials, setMaterials] = useState<Record<string, any[]>>({
     scope1: [],
     scope2: [],
     scope3: [],
     downstream: []
   })
 
+  const categoryDescriptions = {
+    "Stationary Combustion": "Emissions from fuel combustion in owned assets (e.g., boilers, furnaces, generators)",
+    "Mobile Combustion": "Emissions from vehicles and machinery (e.g., company-owned trucks, ships, aircraft)",
+    "Process Emissions": "Emissions from chemical processes (e.g., cement production, steel manufacturing)",
+    "Fugitive Emissions": "Leaks from equipment (e.g., refrigerants, methane leaks from pipelines)",
+    "Purchased Electricity": "Emissions from power used in operations (factories, offices, data centers)",
+    "Purchased Steam": "Energy sourced externally for heating or industrial processes",
+    "Purchased Heating": "External district heating networks or third-party heat suppliers",
+    "Purchased Cooling": "External district cooling networks or HVAC system emissions",
+    "Purchased Goods & Services": "Raw materials, office supplies, manufacturing inputs",
+    "Capital Goods": "Emissions from production of long-term assets (machinery, vehicles, buildings)",
+    "Business Travel": "Emissions from business-related travel",
+    "Employee Commuting": "Emissions from employees commuting to work",
+    "Transportation and Distribution (Downstream)": "Emissions from the transportation and distribution of products sold by the company",
+    "Processing of Sold Products": "Emissions from the processing of products sold by the company",
+    "Use of Sold Products": "Emissions from the use of products sold by the company",
+    "End-of-Life Treatment of Sold Products": "Emissions from the end-of-life treatment of products sold by the company"
+  }
+
   useEffect(() => {
     const fetchMaterials = async () => {
       try {
         const data = await getMaterials('your-org-id') // Replace with actual org ID
-        // Group materials by scope
         const grouped = data.reduce((acc, material) => {
           const scope = material.scope.toLowerCase()
           if (!acc[scope]) acc[scope] = []
           acc[scope].push(material)
           return acc
-        }, {} as Record<string, Material[]>)
+        }, {} as Record<string, any[]>)
         setMaterials(grouped)
       } catch (error) {
         console.error('Error fetching materials:', error)
@@ -80,7 +76,6 @@ export default function MaterialLibrary() {
         ...formData,
         organization_id: 'your-org-id' // Replace with actual org ID
       })
-      // Update state with new material
       setMaterials(prev => {
         const scope = newMaterial.scope.toLowerCase()
         return {
@@ -97,7 +92,6 @@ export default function MaterialLibrary() {
   const handleUpdateMaterial = async (id: string, formData: any) => {
     try {
       const updatedMaterial = await updateMaterial(id, formData)
-      // Update state with updated material
       setMaterials(prev => {
         const scope = updatedMaterial.scope.toLowerCase()
         return {
@@ -114,7 +108,6 @@ export default function MaterialLibrary() {
   const handleDeleteMaterial = async (id: string, scope: string) => {
     try {
       await deleteMaterial(id)
-      // Remove material from state
       setMaterials(prev => ({
         ...prev,
         [scope]: prev[scope].filter(m => m.id !== id)
@@ -123,92 +116,6 @@ export default function MaterialLibrary() {
       console.error('Error deleting material:', error)
     }
   }
-        name: "Natural Gas",
-        category: "Stationary Combustion",
-        unit: "m³",
-        factor: 2.02,
-        source: "GHG Protocol",
-      },
-      { id: 2, name: "Diesel", category: "Mobile Combustion", unit: "L", factor: 2.68, source: "EPA" },
-      { id: 3, name: "Gasoline", category: "Mobile Combustion", unit: "L", factor: 2.31, source: "EPA" },
-      { id: 4, name: "Propane", category: "Stationary Combustion", unit: "L", factor: 1.51, source: "GHG Protocol" },
-    ],
-    scope2: [
-      {
-        id: 5,
-        name: "Electricity (Grid Average)",
-        category: "Purchased Electricity",
-        unit: "kWh",
-        factor: 0.42,
-        source: "EPA eGRID",
-      },
-      {
-        id: 6,
-        name: "Electricity (Renewable)",
-        category: "Purchased Electricity",
-        unit: "kWh",
-        factor: 0.0,
-        source: "GHG Protocol",
-      },
-      { id: 7, name: "Steam", category: "Purchased Heat", unit: "kg", factor: 0.27, source: "GHG Protocol" },
-    ],
-    scope3: [
-      {
-        id: 8,
-        name: "Business Travel - Flight (Short Haul)",
-        category: "Business Travel",
-        unit: "km",
-        factor: 0.15,
-        source: "DEFRA",
-      },
-      {
-        id: 9,
-        name: "Business Travel - Flight (Long Haul)",
-        category: "Business Travel",
-        unit: "km",
-        factor: 0.11,
-        source: "DEFRA",
-      },
-      {
-        id: 10,
-        name: "Employee Commuting - Car",
-        category: "Employee Commuting",
-        unit: "km",
-        factor: 0.17,
-        source: "EPA",
-      },
-      { id: 11, name: "Waste - Landfill", category: "Waste Disposal", unit: "kg", factor: 0.58, source: "EPA" },
-      { id: 12, name: "Purchased Goods - Paper", category: "Purchased Goods", unit: "kg", factor: 0.94, source: "EPA" },
-    ],
-  }
-
-  const categoryDescriptions = {
-    "Stationary Combustion": "Emissions from stationary sources like boilers and furnaces.",
-    "Mobile Combustion": "Emissions from mobile sources like cars, trucks, and airplanes.",
-    "Process Emissions": "Emissions that are released during industrial processes.",
-    "Fugitive Emissions": "Unintentional releases of greenhouse gases from equipment.",
-    "Purchased Electricity": "Emissions associated with the generation of electricity purchased by the company.",
-    "Purchased Heat": "Emissions associated with the generation of heat purchased by the company.",
-    "Purchased Steam": "Emissions associated with the generation of steam purchased by the company.",
-    "Purchased Cooling": "Emissions associated with the generation of cooling purchased by the company.",
-    "Purchased Goods and Services": "Emissions embedded in goods and services purchased by the company.",
-    "Capital Goods": "Emissions associated with the manufacturing and transportation of capital goods.",
-    "Fuel and Energy-Related Activities": "Emissions from the use of fuel and energy.",
-    "Transportation and Distribution (Upstream)": "Emissions from the transportation and distribution of materials to the company.",
-    "Waste Generated in Operations": "Emissions from the generation and disposal of waste.",
-    "Business Travel": "Emissions from business-related travel.",
-    "Employee Commuting": "Emissions from employees commuting to work.",
-    "Leased Assets (Upstream)": "Emissions from leased assets used in the company's operations.",
-    "Transportation and Distribution (Downstream)": "Emissions from the transportation and distribution of products sold by the company.",
-    "Processing of Sold Products": "Emissions from the processing of products sold by the company.",
-    "Use of Sold Products": "Emissions from the use of products sold by the company.",
-    "End-of-Life Treatment of Sold Products": "Emissions from the end-of-life treatment of products sold by the company.",
-    "Leased Assets (Downstream)": "Emissions from leased assets related to the company's products.",
-    "Franchises": "Emissions from franchise operations.",
-    "Investments": "Emissions associated with investments made by the company."
-
-  }
-
 
   const handleEditMaterial = (material: any) => {
     setSelectedMaterial(material)
@@ -307,7 +214,7 @@ export default function MaterialLibrary() {
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button className="bg-green-600 hover:bg-green-700" onClick={() => setIsAddDialogOpen(false)}>
+                <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleAddMaterial({name: "", scope: addDialogScope, category: "", unit: "", factor: 0, source: ""})}>
                   Add Material
                 </Button>
               </DialogFooter>
@@ -315,7 +222,7 @@ export default function MaterialLibrary() {
           </Dialog>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="scope1" onValueChange={setActiveScope}>
+          <Tabs value={activeScope} onValueChange={setActiveScope}>
             <TabsList className="mb-6">
               <TabsTrigger value="scope1">Scope 1</TabsTrigger>
               <TabsTrigger value="scope2">Scope 2</TabsTrigger>
@@ -338,7 +245,7 @@ export default function MaterialLibrary() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {materials[scope].map((material) => (
+                      {materials[scope]?.map((material) => (
                         <TableRow key={material.id}>
                           <TableCell className="font-medium">{material.name}</TableCell>
                           <TableCell>{material.category}</TableCell>
@@ -351,7 +258,7 @@ export default function MaterialLibrary() {
                                 <Pencil className="h-4 w-4" />
                                 <span className="sr-only">Edit</span>
                               </Button>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteMaterial(material.id, scope)}>
                                 <Trash2 className="h-4 w-4" />
                                 <span className="sr-only">Delete</span>
                               </Button>
@@ -432,7 +339,7 @@ export default function MaterialLibrary() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button className="bg-green-600 hover:bg-green-700" onClick={handleSaveMaterial}>
+            <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleUpdateMaterial(selectedMaterial.id, {name: "", scope: "", category: "", unit: "", factor: 0, source: ""})}>
               Save Changes
             </Button>
           </DialogFooter>
@@ -441,3 +348,19 @@ export default function MaterialLibrary() {
     </>
   )
 }
+
+const scopeCategories = {
+    scope1: ["Stationary Combustion", "Mobile Combustion", "Process Emissions", "Fugitive Emissions"],
+    scope2: ["Purchased Electricity", "Purchased Steam", "Purchased Heating", "Purchased Cooling"],
+    scope3: [
+      "Purchased Goods & Services",
+      "Capital Goods",
+      "Business Travel",
+      "Employee Commuting",
+      "Transportation and Distribution (Downstream)",
+      "Processing of Sold Products",
+      "Use of Sold Products",
+      "End-of-Life Treatment of Sold Products"
+    ],
+    downstream: []
+  }
