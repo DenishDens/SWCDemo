@@ -35,22 +35,22 @@ INSERT INTO profiles (id, full_name, job_title, phone) VALUES
   ('a987f654-3210-4321-b098-76543c210987', 'Emma Thompson', 'Retail Sustainability Lead', '+1-312-555-0105');
 
 -- Create Materials Library
-INSERT INTO materials (name, category, scope, unit, emission_factor, source, organization_id, created_by) VALUES 
+INSERT INTO materials (code, name, category, scope, unit, emission_factor, source, organization_id, created_by) VALUES 
   -- GreenTech Solutions Materials
-  ('Natural Gas', 'Stationary Combustion', 'scope1', 'm³', 2.02, 'GHG Protocol', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', '8d1e3562-e274-4a7b-b81c-e827b42b4256'),
-  ('Diesel Fleet', 'Mobile Combustion', 'scope1', 'L', 2.68, 'GHG Protocol', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', '8d1e3562-e274-4a7b-b81c-e827b42b4256'),
-  ('Grid Electricity', 'Purchased Energy', 'scope2', 'kWh', 0.42, 'EPA eGRID', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', 'c92f4b31-97b3-4da7-b81c-e827b42b4259'),
-  ('Business Flights', 'Business Travel', 'scope3', 'km', 0.14, 'DEFRA', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', 'c92f4b31-97b3-4da7-b81c-e827b42b4259'),
+  ('NG-001', 'Natural Gas', 'Stationary Combustion', 'scope1', 'm³', 2.02, 'GHG Protocol', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', '8d1e3562-e274-4a7b-b81c-e827b42b4256'),
+  ('DF-001', 'Diesel Fleet', 'Mobile Combustion', 'scope1', 'L', 2.68, 'GHG Protocol', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', '8d1e3562-e274-4a7b-b81c-e827b42b4256'),
+  ('GE-001', 'Grid Electricity', 'Purchased Energy', 'scope2', 'kWh', 0.42, 'EPA eGRID', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', 'c92f4b31-97b3-4da7-b81c-e827b42b4259'),
+  ('BF-001', 'Business Flights', 'Business Travel', 'scope3', 'km', 0.14, 'DEFRA', 'd4c74453-0ca4-4c79-a245-1a3b7e11eca1', 'c92f4b31-97b3-4da7-b81c-e827b42b4259'),
 
   -- EcoManufacturing Materials
-  ('Process Heat', 'Manufacturing', 'scope1', 'MMBtu', 53.11, 'EPA', 'f892b455-d409-4c81-9328-952a2e6882e2', 'f832c945-b123-4567-89ab-cdef01234567'),
-  ('Refrigerants', 'Fugitive Emissions', 'scope1', 'kg', 1430.0, 'EPA', 'f892b455-d409-4c81-9328-952a2e6882e2', 'f832c945-b123-4567-89ab-cdef01234567'),
-  ('Purchased Steam', 'Purchased Energy', 'scope2', 'MMBtu', 66.33, 'EPA', 'f892b455-d409-4c81-9328-952a2e6882e2', 'f832c945-b123-4567-89ab-cdef01234567'),
+  ('PH-001', 'Process Heat', 'Manufacturing', 'scope1', 'MMBtu', 53.11, 'EPA', 'f892b455-d409-4c81-9328-952a2e6882e2', 'f832c945-b123-4567-89ab-cdef01234567'),
+  ('RF-001', 'Refrigerants', 'Fugitive Emissions', 'scope1', 'kg', 1430.0, 'EPA', 'f892b455-d409-4c81-9328-952a2e6882e2', 'f832c945-b123-4567-89ab-cdef01234567'),
+  ('PS-001', 'Purchased Steam', 'Purchased Energy', 'scope2', 'MMBtu', 66.33, 'EPA', 'f892b455-d409-4c81-9328-952a2e6882e2', 'f832c945-b123-4567-89ab-cdef01234567'),
 
   -- Sustainable Retail Materials
-  ('Refrigeration', 'Stationary Combustion', 'scope1', 'kg', 1810.0, 'EPA', 'c123d456-e789-4f01-b234-567c89d01e2f', 'a987f654-3210-4321-b098-76543c210987'),
-  ('Store Electricity', 'Purchased Energy', 'scope2', 'kWh', 0.45, 'EPA eGRID', 'c123d456-e789-4f01-b234-567c89d01e2f', 'a987f654-3210-4321-b098-76543c210987'),
-  ('Waste to Landfill', 'Waste', 'scope3', 'tonnes', 0.58, 'EPA', 'c123d456-e789-4f01-b234-567c89d01e2f', 'a987f654-3210-4321-b098-76543c210987');
+  ('RE-001', 'Refrigeration', 'Stationary Combustion', 'scope1', 'kg', 1810.0, 'EPA', 'c123d456-e789-4f01-b234-567c89d01e2f', 'a987f654-3210-4321-b098-76543c210987'),
+  ('SE-001', 'Store Electricity', 'Purchased Energy', 'scope2', 'kWh', 0.45, 'EPA eGRID', 'c123d456-e789-4f01-b234-567c89d01e2f', 'a987f654-3210-4321-b098-76543c210987'),
+  ('WL-001', 'Waste to Landfill', 'Waste', 'scope3', 'tonnes', 0.58, 'EPA', 'c123d456-e789-4f01-b234-567c89d01e2f', 'a987f654-3210-4321-b098-76543c210987');
 
 -- Create Business Units
 INSERT INTO projects (id, organization_id, name, description, type, code, status, location, created_by) VALUES 
