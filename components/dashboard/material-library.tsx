@@ -145,6 +145,11 @@ export default function MaterialLibrary() {
           <div>
             <CardTitle>Emission Factors Library</CardTitle>
             <CardDescription>Configure emission factors for different materials and activities</CardDescription>
+            {Object.keys(materials).length === 0 && (
+              <p className="mt-4 text-sm text-red-600">
+                You are not part of any organization. Please join or create an organization to manage materials.
+              </p>
+            )}
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
