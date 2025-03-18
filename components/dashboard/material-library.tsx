@@ -17,8 +17,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Pencil, Trash2 } from "lucide-react"
+import { Plus, Pencil, Trash2, Search, Upload, Download } from "lucide-react"
 import { getMaterials, createMaterial, updateMaterial, deleteMaterial } from "@/lib/material-library"
+import { CSVLink } from "react-csv";
+
 
 type Material = {
   id: string;
@@ -28,6 +30,8 @@ type Material = {
   factor: number;
   source: string;
   scope: string;
+  materialCode: string; // Added material code field
+  comments: string;     // Added comments field
 };
 
 
@@ -43,6 +47,7 @@ export default function MaterialLibrary() {
     scope3: [],
     downstream: []
   })
+  const [searchTerm, setSearchTerm] = useState(""); // Added search term state
 
   const categoryDescriptions = {
     "Stationary Combustion": "Emissions from fuel combustion in owned assets (e.g., boilers, furnaces, generators)",
@@ -138,6 +143,19 @@ export default function MaterialLibrary() {
     // In a real app, this would save the updated material data
   }
 
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+  };
+
+  const handleCSVImport = (event: any) => {
+    // Implement CSV import logic here.  This is a placeholder.
+    console.log("CSV import:", event.target.files[0]);
+  };
+
+  const filteredMaterials = (scope: string) => {
+    return materials[scope]?.filter(material => material.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
+  }
+
   return (
     <>
       <Card>
@@ -151,91 +169,40 @@ export default function MaterialLibrary() {
               </p>
             )}
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Material
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Material</DialogTitle>
-                <DialogDescription>Add a new material or activity with its emission factor</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Name
-                  </Label>
-                  <Input id="name" placeholder="Material name" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="scope" className="text-right">
-                    Scope
-                  </Label>
-                  <Select onValueChange={(value) => setAddDialogScope(value)}>
-                    <SelectTrigger id="scope" className="col-span-3">
-                      <SelectValue placeholder="Select scope" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="scope1">Scope 1</SelectItem>
-                      <SelectItem value="scope2">Scope 2</SelectItem>
-                      <SelectItem value="scope3">Scope 3</SelectItem>
-                      <SelectItem value="downstream">Downstream Emissions</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="category" className="text-right">
-                    Category
-                  </Label>
-                  <div className="space-y-2 col-span-3">
-                    <Select>
-                      <SelectTrigger id="category">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {addDialogScope && scopeCategories[addDialogScope as keyof typeof scopeCategories].map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {/* Display description here */}
-                    {/*<p className="text-sm text-muted-foreground">Description will go here</p>*/}
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="unit" className="text-right">
-                    Unit
-                  </Label>
-                  <Input id="unit" placeholder="Unit of measurement" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="factor" className="text-right">
-                    Emission Factor
-                  </Label>
-                  <Input id="factor" type="number" step="0.01" placeholder="0.00" className="col-span-3" />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="source" className="text-right">
-                    Source
-                  </Label>
-                  <Input id="source" placeholder="Data source" className="col-span-3" />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleAddMaterial({name: "", scope: addDialogScope, category: "", unit: "", factor: 0, source: ""})}>
-                  Add Material
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <div className="flex gap-4 items-center">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search materials..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+            </div>
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+              id="csvInput"
+              onChange={handleCSVImport}
+            />
+            <Button variant="outline" onClick={() => document.getElementById('csvInput')?.click()}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import CSV
+            </Button>
+            <CSVLink
+              data={Object.values(materials).flat()}
+              filename="materials.csv"
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </CSVLink>
+            <Button className="bg-green-600 hover:bg-green-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Material
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs value={activeScope} onValueChange={setActiveScope}>
@@ -257,17 +224,21 @@ export default function MaterialLibrary() {
                         <TableHead>Unit</TableHead>
                         <TableHead className="text-right">Emission Factor (kgCO₂e)</TableHead>
                         <TableHead>Source</TableHead>
+                        <TableHead>Material Code</TableHead> {/* Added Material Code column */}
+                        <TableHead>Comments</TableHead> {/* Added Comments column */}
                         <TableHead className="w-[100px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {materials[scope]?.map((material) => (
+                      {filteredMaterials(scope).map((material) => (
                         <TableRow key={material.id}>
                           <TableCell className="font-medium">{material.name}</TableCell>
                           <TableCell>{material.category}</TableCell>
                           <TableCell>{material.unit}</TableCell>
                           <TableCell className="text-right">{material.factor.toFixed(2)}</TableCell>
                           <TableCell>{material.source}</TableCell>
+                          <TableCell>{material.materialCode}</TableCell> {/* Added Material Code cell */}
+                          <TableCell>{material.comments}</TableCell> {/* Added Comments cell */}
                           <TableCell>
                             <div className="flex space-x-2">
                               <Button variant="ghost" size="icon" onClick={() => handleEditMaterial(material)}>
@@ -349,13 +320,25 @@ export default function MaterialLibrary() {
                 </Label>
                 <Input id="edit-source" defaultValue={selectedMaterial.source} className="col-span-3" />
               </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-materialCode" className="text-right">
+                  Material Code
+                </Label>
+                <Input id="edit-materialCode" defaultValue={selectedMaterial.materialCode} className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-comments" className="text-right">
+                  Comments
+                </Label>
+                <Input id="edit-comments" defaultValue={selectedMaterial.comments} className="col-span-3" />
+              </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleUpdateMaterial(selectedMaterial?.id || "", {name: "", scope: "", category: "", unit: "", factor: 0, source: ""})}>
+            <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleUpdateMaterial(selectedMaterial?.id || "", {name: "", scope: "", category: "", unit: "", factor: 0, source: "", materialCode: "", comments: ""})}>
               Save Changes
             </Button>
           </DialogFooter>

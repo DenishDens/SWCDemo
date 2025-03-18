@@ -51,17 +51,19 @@ create table public.profiles (
 create table public.materials (
   id uuid default uuid_generate_v4() primary key,
   organization_id uuid references public.organizations on delete cascade,
+  code text not null,
   name text not null,
   category text not null,
   scope text not null check (scope in ('scope1', 'scope2', 'scope3')),
   unit text not null,
   emission_factor decimal not null,
   source text not null,
+  comments text,
   created_at timestamp with time zone default timezone('utc'::text, now()),
   updated_at timestamp with time zone default timezone('utc'::text, now()),
   created_by uuid references auth.users on delete set null,
   updated_by uuid references auth.users on delete set null,
-  unique(organization_id, name, category)
+  unique(organization_id, code)
 );
 
 -- Create projects table (supports both business units and projects)
