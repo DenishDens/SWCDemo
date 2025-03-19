@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useRouter } from "next/navigation"
 import { useState, type FormEvent, type ChangeEvent } from "react"
+import { supabase } from "@/lib/supabase"
 
 // Define interfaces for form data and errors
 interface LoginFormData {
@@ -25,8 +26,8 @@ export default function LoginPageClient() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [formData, setFormData] = useState<LoginFormData>({
-    email: "",
-    password: "",
+    email: "demo@example.com",
+    password: "password123",
     rememberMe: false,
   })
   const [errors, setErrors] = useState<FormErrors>({})
@@ -72,27 +73,19 @@ export default function LoginPageClient() {
     setErrors({})
 
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Sign in with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      })
 
-      // In a real app, you would make an API call like:
-      // const response = await fetch('/api/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     email: formData.email,
-      //     password: formData.password,
-      //     rememberMe: formData.rememberMe
-      //   })
-      // });
-      //
-      // if (!response.ok) {
-      //   const errorData = await response.json();
-      //   throw new Error(errorData.message || 'Login failed');
-      // }
+      if (error) {
+        throw new Error(error.message)
+      }
 
-      // Redirect to dashboard after "successful" login
+      // Successfully signed in
       router.push("/dashboard")
+      router.refresh()
     } catch (err) {
       setErrors({
         general: err instanceof Error ? err.message : "An error occurred during sign in",
@@ -230,12 +223,18 @@ export default function LoginPageClient() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-sm text-gray-600">
+        <p className="mt-4 text-center text-sm text-gray-600">
           Don't have an account?{" "}
           <Link href="/signup" className="font-medium text-green-600 hover:text-green-500">
             Sign up for a free trial
           </Link>
         </p>
+        
+        <div className="mt-4 text-center text-sm text-gray-600 bg-yellow-50 p-2 rounded border border-yellow-200">
+          <strong>Demo Credentials:</strong><br />
+          Email: demo@example.com<br />
+          Password: password123
+        </div>
       </div>
     </div>
   )
