@@ -3,6 +3,8 @@
 import { DialogTrigger } from "@/components/ui/dialog"
 
 import { useState } from "react"
+import { supabase } from "@/lib/supabase"
+import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -45,9 +47,12 @@ export default function ProjectsManager() {
   const [activeTab, setActiveTab] = useState("business-units")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
-  const [selectedProject, setSelectedProject] = useState(null)
+  const [selectedProject, setSelectedProject] = useState<any>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<any>(null)
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [inviteRole, setInviteRole] = useState("viewer")
+  const { toast } = useToast()
 
   // Mock data - in a real app, this would come from your API
   const businessUnits = [
@@ -136,9 +141,45 @@ export default function ProjectsManager() {
     // In a real app, this would create a new business unit or project
   }
 
-  const handleInviteUser = () => {
-    setIsInviteDialogOpen(false)
-    // In a real app, this would send an invitation to the user
+  const handleInviteUser = async () => {
+    if (!selectedProject || !inviteEmail) return
+
+    try {
+      // Generate a unique invite code
+      const code = Math.random().toString(36).substring(2, 10).toUpperCase()
+      
+      // Set expiration to 7 days from now
+      const expires_at = new Date()
+      expires_at.setDate(expires_at.getDate() + 7)
+      
+      const { error } = await supabase
+        .from('project_invites')
+        .insert({
+          project_id: selectedProject.id,
+          email: inviteEmail,
+          role: inviteRole,
+          code,
+          expires_at: expires_at.toISOString(),
+        })
+      
+      if (error) throw error
+      
+      toast({
+        title: "Success",
+        description: `Invitation sent to ${inviteEmail}`,
+      })
+      
+      setIsInviteDialogOpen(false)
+      setInviteEmail("")
+      setInviteRole("viewer")
+    } catch (error) {
+      console.error('Error sending invite:', error)
+      toast({
+        title: "Error",
+        description: "Failed to send invitation",
+        variant: "destructive"
+      })
+    }
   }
 
   const handleEditProject = (project: any) => {
@@ -149,6 +190,11 @@ export default function ProjectsManager() {
   const handleSaveProject = () => {
     setIsEditDialogOpen(false)
     // In a real app, this would save the updated project data
+  }
+
+  const handleInviteClick = (project: any) => {
+    setSelectedProject(project)
+    setIsInviteDialogOpen(true)
   }
 
   return (
@@ -236,10 +282,7 @@ export default function ProjectsManager() {
                   <BusinessUnitCard
                     key={unit.id}
                     businessUnit={unit}
-                    onInvite={() => {
-                      setSelectedProject(unit)
-                      setIsInviteDialogOpen(true)
-                    }}
+                    onInvite={() => setIsInviteDialogOpen(true)}
                     handleEditProject={handleEditProject}
                   />
                 ))}
@@ -252,10 +295,7 @@ export default function ProjectsManager() {
                   <ProjectCard
                     key={project.id}
                     project={project}
-                    onInvite={() => {
-                      setSelectedProject(project)
-                      setIsInviteDialogOpen(true)
-                    }}
+                    onInvite={handleInviteClick}
                     handleEditProject={handleEditProject}
                   />
                 ))}
@@ -265,46 +305,69 @@ export default function ProjectsManager() {
         </div>
       </div>
 
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {activeTab === "projects"
+          ? projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onInvite={handleInviteClick}
+                handleEditProject={handleEditProject}
+              />
+            ))
+          : businessUnits.map((unit) => (
+              <BusinessUnitCard
+                key={unit.id}
+                businessUnit={unit}
+                onInvite={() => setIsInviteDialogOpen(true)}
+                handleEditProject={handleEditProject}
+              />
+            ))}
+      </div>
+
       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Invite Team Members</DialogTitle>
-            <DialogDescription>Invite users to collaborate on {selectedProject?.name}</DialogDescription>
+            <DialogTitle>Share Project</DialogTitle>
+            <DialogDescription>
+              Enter an email address and select a role to share this project
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
+              <Label htmlFor="invite-email" className="text-right">
                 Email
               </Label>
-              <Input id="email" type="email" placeholder="user@example.com" className="col-span-3" />
+              <Input
+                id="invite-email"
+                type="email"
+                placeholder="user@example.com"
+                className="col-span-3"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="text-right">
+              <Label htmlFor="invite-role" className="text-right">
                 Role
               </Label>
               <select
-                id="role"
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                id="invite-role"
+                className="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value)}
               >
                 <option value="viewer">Viewer</option>
                 <option value="editor">Editor</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="message" className="text-right pt-2">
-                Message
-              </Label>
-              <Textarea id="message" placeholder="Optional message" className="col-span-3" rows={3} />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button className="bg-green-600 hover:bg-green-700" onClick={handleInviteUser}>
-              Send Invitation
-            </Button>
+            <Button onClick={handleInviteUser}>Share</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -497,7 +560,7 @@ function BusinessUnitCard({ businessUnit, onInvite, handleEditProject }: Busines
 
 interface ProjectCardProps {
   project: any
-  onInvite: () => void
+  onInvite: (project: any) => void
   handleEditProject: (project: any) => void
 }
 
@@ -512,42 +575,49 @@ function ProjectCard({ project, onInvite, handleEditProject }: ProjectCardProps)
             </div>
             <CardTitle className="text-lg">{project.name}</CardTitle>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => (window.location.href = `/dashboard/projects/${project.id}`)}>
-                <BarChart3 className="h-4 w-4 mr-2" />
-                View Dashboard
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleEditProject(project)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Project
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => (window.location.href = `/dashboard/upload?project=${project.id}`)}>
-                <FileUp className="h-4 w-4 mr-2" />
-                Upload Data
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onInvite}>
-                <Share2 className="h-4 w-4 mr-2" />
-                Invite Users
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => (window.location.href = `/dashboard/projects/${project.id}/settings`)}>
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onInvite(project)}
+              className="flex items-center gap-1"
+            >
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreHorizontal className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => (window.location.href = `/dashboard/projects/${project.id}`)}>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  View Dashboard
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleEditProject(project)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Project
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => (window.location.href = `/dashboard/upload?project=${project.id}`)}>
+                  <FileUp className="h-4 w-4 mr-2" />
+                  Upload Data
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => (window.location.href = `/dashboard/projects/${project.id}/settings`)}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-red-600">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
         <CardDescription className="mt-2">{project.description}</CardDescription>
       </CardHeader>
@@ -600,4 +670,3 @@ function ProjectCard({ project, onInvite, handleEditProject }: ProjectCardProps)
     </Card>
   )
 }
-

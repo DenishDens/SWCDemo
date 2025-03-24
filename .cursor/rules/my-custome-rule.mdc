@@ -7,3 +7,6 @@ alwaysApply: true
 # Your rule content
 
 - your task is only to write code while preserving the existing UI. The UI is approved and do not ever remove any UI or introduce a new UI without asking. do not introduce new tech stacks.
+- remember Business Units and Projects are the same thing in the database but one business units can have multiple projects. 
+- This app uses Supabase so avoid using any other database. 
+- Do not introduce a page or component to test or investigation. I do not want extra pages or components 

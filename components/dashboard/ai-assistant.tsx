@@ -1,200 +1,244 @@
 "use client"
 
-import type React from "react"
+import { useState, useRef, useEffect } from 'react'
+import { Bot, User, X, Send, ChevronDown, ChevronUp } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import { supabase } from '@/lib/supabase'
+import { useToast } from '@/hooks/use-toast'
 
-import { useState, useRef, useEffect } from "react"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Brain, Send, X, Minimize2, ChevronUp, Loader2 } from "lucide-react"
+interface Message {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: Date
+}
 
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false)
-  const [isMinimized, setIsMinimized] = useState(false)
-  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string; timestamp: Date }[]>([
-    {
-      role: "assistant",
-      content: "Hello! I'm your AI assistant for carbon emissions tracking. How can I help you today?",
-      timestamp: new Date(),
-    },
-  ])
-  const [inputValue, setInputValue] = useState("")
+  const [messages, setMessages] = useState<Message[]>([])
+  const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [userAccessibleProjects, setUserAccessibleProjects] = useState<string[]>([])
+  const [userRole, setUserRole] = useState<string>('viewer')
+  const [userId, setUserId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { toast } = useToast()
 
-  // Scroll to bottom of messages when new message is added
+  // Fetch user accessible projects and role on mount
   useEffect(() => {
+    const fetchUserAccess = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        setUserId(user.id)
+
+        // Get user profile to determine role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+
+        if (profile?.role) {
+          setUserRole(profile.role)
+        }
+
+        // Get projects the user has access to
+        const { data: projects } = await supabase
+          .from('project_members')
+          .select('project_id')
+          .eq('user_id', user.id)
+
+        if (projects) {
+          setUserAccessibleProjects(projects.map(p => p.project_id))
+        }
+      } catch (error) {
+        console.error('Error fetching user access:', error)
+      }
+    }
+
+    fetchUserAccess()
+  }, [])
+
+  useEffect(() => {
+    // Scroll to bottom of messages
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages])
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return
+  // Add initial greeting message
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([
+        {
+          id: '1',
+          role: 'assistant',
+          content: 'Hello! I\'m your AI assistant. How can I help you today?',
+          timestamp: new Date()
+        }
+      ])
+    }
+  }, [messages])
 
-    const userMessage = {
-      role: "user" as const,
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!inputValue.trim() || isLoading) return
+
+    // Add user message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
       content: inputValue,
-      timestamp: new Date(),
+      timestamp: new Date()
     }
 
-    setMessages((prev) => [...prev, userMessage])
-    setInputValue("")
+    setMessages(prev => [...prev, userMessage])
+    setInputValue('')
     setIsLoading(true)
 
-    // Simulate AI response
-    setTimeout(() => {
-      let response = ""
+    try {
+      // Use the API route for processing the message
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage.content,
+          userId: userId,
+          userRole: userRole,
+          userProjects: userAccessibleProjects
+        }),
+      });
 
-      if (inputValue.toLowerCase().includes("emission") || inputValue.toLowerCase().includes("carbon")) {
-        response =
-          "Based on your recent uploads, your total carbon emissions have decreased by 12.5% compared to last month. Would you like me to generate a detailed report on which areas have improved the most?"
-      } else if (inputValue.toLowerCase().includes("report") || inputValue.toLowerCase().includes("analysis")) {
-        response =
-          "I can help you generate various reports including monthly summaries, trend analysis, and comparison reports. What specific information are you looking for?"
-      } else if (inputValue.toLowerCase().includes("help") || inputValue.toLowerCase().includes("how")) {
-        response =
-          "I can help you with uploading data, analyzing emissions, generating reports, and providing insights to reduce your carbon footprint. Just let me know what you need assistance with!"
-      } else {
-        response =
-          "I'm here to help with your carbon emissions tracking and analysis. You can ask me about your emissions data, how to reduce your carbon footprint, or how to use specific features of the platform."
+      if (!response.ok) {
+        throw new Error('Failed to get response from chat API');
       }
 
-      const assistantMessage = {
-        role: "assistant" as const,
-        content: response,
-        timestamp: new Date(),
+      const data = await response.json();
+      
+      // Add assistant response
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.response || "I'm sorry, I couldn't process your request at the moment.",
+        timestamp: new Date()
       }
 
-      setMessages((prev) => [...prev, assistantMessage])
+      setMessages(prev => [...prev, assistantMessage])
+    } catch (error) {
+      console.error('Error processing message:', error)
+      toast({
+        title: "Error",
+        description: "Failed to process your message. Please try again.",
+        variant: "destructive"
+      })
+      
+      // Add error message from assistant
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "I'm having trouble processing your request right now. Please try again later.",
+        timestamp: new Date()
+      }
+      
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
       setIsLoading(false)
-    }, 1500)
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
     }
-  }
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-  }
-
-  if (!isOpen) {
-    return (
-      <Button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 rounded-full w-14 h-14 bg-green-600 hover:bg-green-700 shadow-lg flex items-center justify-center"
-      >
-        <Brain className="h-6 w-6" />
-      </Button>
-    )
   }
 
   return (
-    <div
-      className={`fixed ${isMinimized ? "bottom-6 right-6 w-auto" : "bottom-6 right-6 w-80 md:w-96"} z-50 transition-all duration-200 ease-in-out`}
-    >
-      {isMinimized ? (
-        <Button
-          onClick={() => setIsMinimized(false)}
-          className="rounded-full w-14 h-14 bg-green-600 hover:bg-green-700 shadow-lg flex items-center justify-center"
-        >
-          <ChevronUp className="h-6 w-6" />
-        </Button>
-      ) : (
-        <Card className="shadow-xl border-gray-200">
-          <CardHeader className="py-3 px-4 flex flex-row items-center justify-between bg-green-600 text-white rounded-t-lg">
+    <div className="fixed bottom-4 right-4 z-50">
+      {isOpen ? (
+        <div className="bg-white rounded-lg shadow-xl w-80 sm:w-96 flex flex-col h-96 border border-gray-200">
+          <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-green-600 text-white rounded-t-lg">
             <div className="flex items-center">
-              <Brain className="h-5 w-5 mr-2" />
-              <CardTitle className="text-base">AI Assistant</CardTitle>
+              <Bot className="h-5 w-5 mr-2" />
+              <h3 className="font-medium">AI Assistant</h3>
             </div>
-            <div className="flex items-center space-x-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-white hover:bg-green-700 rounded-full"
-                onClick={() => setIsMinimized(true)}
+            <button onClick={() => setIsOpen(false)} className="text-white hover:text-gray-200">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((message) => (
+              <div 
+                key={message.id} 
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <Minimize2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-white hover:bg-green-700 rounded-full"
-                onClick={() => setIsOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="h-80 overflow-y-auto p-4 bg-gray-50">
-              {messages.map((message, index) => (
-                <div key={index} className={`flex mb-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                  {message.role === "assistant" && (
-                    <Avatar className="h-8 w-8 mr-2">
-                      <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                      <AvatarFallback className="bg-green-100 text-green-800">AI</AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div
-                    className={`max-w-[80%] ${message.role === "user" ? "bg-green-600 text-white" : "bg-white border border-gray-200"} rounded-lg p-3`}
-                  >
-                    <p className="text-sm">{message.content}</p>
-                    <p className={`text-xs mt-1 ${message.role === "user" ? "text-green-100" : "text-gray-500"}`}>
-                      {formatTime(message.timestamp)}
-                    </p>
+                <div 
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.role === 'user' 
+                      ? 'bg-green-100 text-gray-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  <div className="flex items-center mb-1">
+                    {message.role === 'assistant' ? (
+                      <Bot className="h-4 w-4 mr-1 text-green-600" />
+                    ) : (
+                      <User className="h-4 w-4 mr-1 text-gray-600" />
+                    )}
+                    <span className="text-xs text-gray-500">
+                      {message.role === 'assistant' ? 'Assistant' : 'You'}
+                    </span>
                   </div>
-                  {message.role === "user" && (
-                    <Avatar className="h-8 w-8 ml-2">
-                      <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                      <AvatarFallback className="bg-gray-200">JD</AvatarFallback>
-                    </Avatar>
-                  )}
+                  <div className="whitespace-pre-wrap">{message.content}</div>
                 </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start mb-4">
-                  <Avatar className="h-8 w-8 mr-2">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                    <AvatarFallback className="bg-green-100 text-green-800">AI</AvatarFallback>
-                  </Avatar>
-                  <div className="bg-white border border-gray-200 rounded-lg p-3">
-                    <div className="flex items-center">
-                      <Loader2 className="h-4 w-4 animate-spin text-gray-500 mr-2" />
-                      <p className="text-sm text-gray-500">Thinking...</p>
-                    </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 text-gray-800 rounded-lg p-3 max-w-[80%]">
+                  <div className="flex items-center">
+                    <Bot className="h-4 w-4 mr-1 text-green-600 animate-pulse" />
+                    <span className="text-xs text-gray-500">Assistant is typing...</span>
                   </div>
                 </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </CardContent>
-          <CardFooter className="p-3 border-t">
-            <div className="flex w-full items-center space-x-2">
-              <Input
-                type="text"
-                placeholder="Ask me anything..."
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+          
+          <form onSubmit={handleSubmit} className="p-3 border-t border-gray-200">
+            <div className="flex">
+              <Textarea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="flex-1"
+                placeholder="Type your message..."
+                className="flex-1 resize-none"
+                rows={1}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSubmit()
+                  }
+                }}
               />
-              <Button
-                onClick={handleSendMessage}
-                disabled={!inputValue.trim() || isLoading}
-                className="bg-green-600 hover:bg-green-700 px-3"
-                size="icon"
+              <Button 
+                type="submit" 
+                size="icon" 
+                className="ml-2 bg-green-600 hover:bg-green-700"
+                disabled={isLoading || !inputValue.trim()}
               >
                 <Send className="h-4 w-4" />
               </Button>
             </div>
-          </CardFooter>
-        </Card>
+          </form>
+        </div>
+      ) : (
+        <Button
+          onClick={() => setIsOpen(true)}
+          className="rounded-full h-12 w-12 flex items-center justify-center bg-green-600 hover:bg-green-700 shadow-lg"
+        >
+          {isOpen ? <ChevronDown className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
+        </Button>
       )}
     </div>
   )

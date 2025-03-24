@@ -1,11 +1,20 @@
-
 'use client'
 
 import * as React from 'react'
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
-import type { ThemeProviderProps } from 'next-themes/dist/types'
 
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+interface CustomThemeProviderProps {
+  children: React.ReactNode
+  attribute?: "class" | "data-theme"
+  defaultTheme?: string
+  enableSystem?: boolean
+  disableTransitionOnChange?: boolean
+  forcedTheme?: string
+  storageKey?: string
+  themes?: string[]
+}
+
+export function ThemeProvider({ children, ...props }: CustomThemeProviderProps) {
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {

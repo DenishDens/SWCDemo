@@ -6,90 +6,47 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useRouter } from "next/navigation"
-import { useState, type FormEvent, type ChangeEvent } from "react"
+import { useState, type FormEvent } from "react"
 import { supabase } from "@/lib/supabase"
-
-// Define interfaces for form data and errors
-interface LoginFormData {
-  email: string
-  password: string
-  rememberMe: boolean
-}
-
-interface FormErrors {
-  email?: string
-  password?: string
-  general?: string
-}
 
 export default function LoginPageClient() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [formData, setFormData] = useState<LoginFormData>({
-    email: "demo@example.com",
-    password: "password123",
-    rememberMe: false,
-  })
-  const [errors, setErrors] = useState<FormErrors>({})
-
-  // Handle input changes
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }))
-  }
-
-  // Validate form
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {}
-
-    if (!formData.email) {
-      newErrors.email = "Email is required"
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid"
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required"
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters"
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+  const [isLoading, setIsLoading] = useState(false)
+  const [email, setEmail] = useState("demo@example.com")
+  const [password, setPassword] = useState("password123")
+  const [rememberMe, setRememberMe] = useState(false)
+  const [error, setError] = useState("")
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-
-    // Validate form before submission
-    if (!validateForm()) {
+    
+    if (!email || !password) {
+      setError("Email and password are required")
       return
     }
-
+    
     setIsLoading(true)
-    setErrors({})
-
+    setError("")
+    
     try {
-      // Sign in with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+      console.log("Attempting to sign in with:", email)
+      
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
-
-      if (error) {
-        throw new Error(error.message)
+      
+      if (signInError) {
+        console.error("Login error:", signInError.message)
+        setError(signInError.message)
+        return
       }
-
-      // Successfully signed in
+      
+      console.log("Login successful, redirecting...")
       router.push("/dashboard")
-      router.refresh()
-    } catch (err) {
-      setErrors({
-        general: err instanceof Error ? err.message : "An error occurred during sign in",
-      })
+    } catch (err: any) {
+      console.error("Unexpected error:", err)
+      setError("An unexpected error occurred. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -112,25 +69,23 @@ export default function LoginPageClient() {
         </div>
 
         <div className="p-6 bg-white rounded-lg shadow-md">
-          {errors.general && (
+          {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
-              {errors.general}
+              {error}
             </div>
           )}
+          
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
               <Input
                 id="email"
-                name="email"
                 type="email"
                 placeholder="name@company.com"
-                value={formData.email}
-                onChange={handleInputChange}
-                className={errors.email ? "border-red-300" : ""}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
@@ -142,23 +97,19 @@ export default function LoginPageClient() {
               </div>
               <Input
                 id="password"
-                name="password"
                 type="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className={errors.password ? "border-red-300" : ""}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password}</p>}
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="rememberMe"
-                  name="rememberMe"
-                  checked={formData.rememberMe}
-                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, rememberMe: checked === true }))}
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
                 />
                 <Label
                   htmlFor="rememberMe"
@@ -169,7 +120,11 @@ export default function LoginPageClient() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="w-full bg-green-600 hover:bg-green-700" 
+              disabled={isLoading}
+            >
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>

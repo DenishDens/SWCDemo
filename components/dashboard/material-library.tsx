@@ -19,21 +19,26 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Pencil, Trash2, Search, Upload, Download } from "lucide-react"
 import { getMaterials, createMaterial, updateMaterial, deleteMaterial } from "@/lib/material-library"
-import { CSVLink } from "react-csv";
-
+import { getCurrentUserOrganizations } from "@/lib/services/organization-service"
+import type { Organization } from "@/lib/services/organization-service"
+// @ts-ignore
+import { CSVLink } from "react-csv"
 
 type Material = {
-  id: string;
-  name: string;
-  category: string;
-  unit: string;
-  factor: number;
-  source: string;
-  scope: string;
-  materialCode: string; // Added material code field
-  comments: string;     // Added comments field
-};
+  id: string
+  name: string
+  category: string
+  unit: string
+  factor: number
+  source: string
+  scope: string
+  materialCode: string
+  comments: string
+}
 
+type CategoryDescription = {
+  [key: string]: string
+}
 
 export default function MaterialLibrary() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -41,15 +46,17 @@ export default function MaterialLibrary() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
   const [addDialogScope, setAddDialogScope] = useState("")
+  const [organizations, setOrganizations] = useState<Organization[]>([])
+  const [selectedOrganization, setSelectedOrganization] = useState<string | null>(null)
   const [materials, setMaterials] = useState<Record<string, Material[]>>({
     scope1: [],
     scope2: [],
     scope3: [],
     downstream: []
   })
-  const [searchTerm, setSearchTerm] = useState(""); // Added search term state
+  const [searchTerm, setSearchTerm] = useState("")
 
-  const categoryDescriptions = {
+  const categoryDescriptions: CategoryDescription = {
     "Stationary Combustion": "Emissions from fuel combustion in owned assets (e.g., boilers, furnaces, generators)",
     "Mobile Combustion": "Emissions from vehicles and machinery (e.g., company-owned trucks, ships, aircraft)",
     "Process Emissions": "Emissions from chemical processes (e.g., cement production, steel manufacturing)",
@@ -69,9 +76,31 @@ export default function MaterialLibrary() {
   }
 
   useEffect(() => {
-    const fetchMaterials = async () => {
+    const fetchOrganizations = async () => {
       try {
-        const data = await getMaterials('your-org-id') // Replace with actual org ID
+        const orgs = await getCurrentUserOrganizations()
+        const transformedOrgs = orgs.map(org => ({
+          id: org.id,
+          name: org.name,
+          slug: org.slug
+        }))
+        setOrganizations(transformedOrgs)
+        if (transformedOrgs.length > 0) {
+          setSelectedOrganization(transformedOrgs[0].id)
+        }
+      } catch (error) {
+        console.error('Error fetching organizations:', error)
+      }
+    }
+    fetchOrganizations()
+  }, [])
+
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      if (!selectedOrganization) return
+      
+      try {
+        const data = await getMaterials(selectedOrganization)
         const grouped = data.reduce((acc, material) => {
           const scope = material.scope.toLowerCase()
           if (!acc[scope]) acc[scope] = []
@@ -84,13 +113,15 @@ export default function MaterialLibrary() {
       }
     }
     fetchMaterials()
-  }, [])
+  }, [selectedOrganization])
 
   const handleAddMaterial = async (formData: any) => {
+    if (!selectedOrganization) return
+    
     try {
       const newMaterial = await createMaterial({
         ...formData,
-        organization_id: 'your-org-id' // Replace with actual org ID
+        organization_id: selectedOrganization
       })
       setMaterials(prev => {
         const scope = newMaterial.scope.toLowerCase()
@@ -163,10 +194,25 @@ export default function MaterialLibrary() {
           <div>
             <CardTitle>Emission Factors Library</CardTitle>
             <CardDescription>Configure emission factors for different materials and activities</CardDescription>
-            {Object.keys(materials).length === 0 && (
+            {organizations.length === 0 ? (
               <p className="mt-4 text-sm text-red-600">
                 You are not part of any organization. Please join or create an organization to manage materials.
               </p>
+            ) : (
+              <div className="mt-4">
+                <Select value={selectedOrganization || ''} onValueChange={setSelectedOrganization}>
+                  <SelectTrigger className="w-[280px]">
+                    <SelectValue placeholder="Select organization" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {organizations.map(org => (
+                      <SelectItem key={org.id} value={org.id}>
+                        {org.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
           <div className="flex gap-4 items-center">
@@ -224,8 +270,8 @@ export default function MaterialLibrary() {
                         <TableHead>Unit</TableHead>
                         <TableHead className="text-right">Emission Factor (kgCO₂e)</TableHead>
                         <TableHead>Source</TableHead>
-                        <TableHead>Material Code</TableHead> {/* Added Material Code column */}
-                        <TableHead>Comments</TableHead> {/* Added Comments column */}
+                        <TableHead>Material Code</TableHead>
+                        <TableHead>Comments</TableHead>
                         <TableHead className="w-[100px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -234,8 +280,8 @@ export default function MaterialLibrary() {
                         <TableRow key={material.id}><TableCell className="font-medium">{material.name}</TableCell><TableCell>{material.category}</TableCell><TableCell>{material.unit}</TableCell>
                           <TableCell className="text-right">{material.factor.toFixed(2)}</TableCell>
                           <TableCell>{material.source}</TableCell>
-                          <TableCell>{material.materialCode}</TableCell> {/* Added Material Code cell */}
-                          <TableCell>{material.comments}</TableCell> {/* Added Comments cell */}
+                          <TableCell>{material.materialCode}</TableCell>
+                          <TableCell>{material.comments}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
                               <Button variant="ghost" size="icon" onClick={() => handleEditMaterial(material)}>
@@ -346,17 +392,17 @@ export default function MaterialLibrary() {
 }
 
 const scopeCategories = {
-    scope1: ["Stationary Combustion", "Mobile Combustion", "Process Emissions", "Fugitive Emissions"],
-    scope2: ["Purchased Electricity", "Purchased Steam", "Purchased Heating", "Purchased Cooling"],
-    scope3: [
-      "Purchased Goods & Services",
-      "Capital Goods",
-      "Business Travel",
-      "Employee Commuting",
-      "Transportation and Distribution (Downstream)",
-      "Processing of Sold Products",
-      "Use of Sold Products",
-      "End-of-Life Treatment of Sold Products"
-    ],
-    downstream: []
-  }
+  scope1: ["Stationary Combustion", "Mobile Combustion", "Process Emissions", "Fugitive Emissions"],
+  scope2: ["Purchased Electricity", "Purchased Steam", "Purchased Heating", "Purchased Cooling"],
+  scope3: [
+    "Purchased Goods & Services",
+    "Capital Goods",
+    "Business Travel",
+    "Employee Commuting",
+    "Transportation and Distribution (Downstream)",
+    "Processing of Sold Products",
+    "Use of Sold Products",
+    "End-of-Life Treatment of Sold Products"
+  ],
+  downstream: []
+}
