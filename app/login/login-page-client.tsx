@@ -5,9 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useRouter } from "next/navigation"
-import { useState, type FormEvent } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useState, type FormEvent, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
+
+// Check if we're in development mode for demo features
+const isDevelopment = 
+  typeof process !== 'undefined' && 
+  process.env.NODE_ENV === 'development' || 
+  typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
 
 export default function LoginPageClient() {
   const router = useRouter()
@@ -15,7 +22,45 @@ export default function LoginPageClient() {
   const [email, setEmail] = useState("demo@example.com")
   const [password, setPassword] = useState("password123")
   const [rememberMe, setRememberMe] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const [settingUpDemo, setSettingUpDemo] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const [messageType, setMessageType] = useState<'success' | 'warning'>('success')
+
+  useEffect(() => {
+    // Check for error or success messages in URL parameters
+    const errorParam = searchParams.get('error')
+    const messageParam = searchParams.get('message')
+    
+    if (errorParam) {
+      let errorMessage = 'Authentication failed'
+      // Map error codes to user-friendly messages
+      switch (errorParam) {
+        case 'missing_code':
+          errorMessage = 'Authentication process was interrupted. Please try again.'
+          break
+        case 'session_error':
+          errorMessage = 'Unable to create your session. Please try again.'
+          break
+        case 'auth_callback_error':
+          errorMessage = 'An unexpected error occurred during login. Please try again.'
+          break
+        case 'connection_error':
+          errorMessage = 'Unable to connect to authentication service. Please check your internet connection and try again.'
+          break
+        default:
+          // Use the raw error if it's a direct message
+          errorMessage = decodeURIComponent(errorParam)
+      }
+      setError(errorMessage)
+    }
+    
+    if (messageParam) {
+      setSuccess(decodeURIComponent(messageParam))
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -31,24 +76,145 @@ export default function LoginPageClient() {
     try {
       console.log("Attempting to sign in with:", email)
       
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      // Set a timeout to handle network issues
+      const signInPromise = supabase.auth.signInWithPassword({
         email,
         password,
       })
       
+      // Add timeout for login
+      const timeoutPromise = new Promise<{ data: any, error: any }>((resolve) => {
+        setTimeout(() => {
+          resolve({ 
+            data: null, 
+            error: { message: "Login request timed out. Please check your connection and try again." } 
+          })
+        }, 5000)
+      })
+      
+      const { data, error: signInError } = await Promise.race([signInPromise, timeoutPromise])
+      
       if (signInError) {
         console.error("Login error:", signInError.message)
-        setError(signInError.message)
+        
+        // Check if the error is due to email not being confirmed
+        if (signInError.message.includes('Email not confirmed')) {
+          setError("Please check your email to confirm your account before signing in.")
+          return
+        }
+        
+        // For demo purposes - if using demo credentials and getting invalid user error, try to create the user
+        if (email === "demo@example.com" && password === "password123" && 
+            (signInError.message.includes("Invalid") || signInError.message.includes("user") || signInError.message.includes("password"))) {
+          
+          console.log("Demo user not found, attempting to create demo user...")
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: "demo@example.com",
+            password: "password123",
+            options: {
+              data: {
+                full_name: "Demo User",
+              }
+            }
+          })
+          
+          if (signUpError) {
+            console.error("Failed to create demo user:", signUpError)
+            setError("Demo user login failed. Please check your connection to Supabase.")
+          } else {
+            setError("Please check your email to confirm your demo account before signing in.")
+          }
+        } else {
+          // For regular users, try to sign up if the user doesn't exist
+          if (signInError.message.includes("Invalid") || signInError.message.includes("user") || signInError.message.includes("password")) {
+            const { error: signUpError } = await supabase.auth.signUp({
+              email,
+              password,
+              options: {
+                emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+              },
+            })
+            
+            if (signUpError) {
+              setError(signUpError.message)
+            } else {
+              setError("Please check your email to confirm your account before signing in.")
+            }
+          } else {
+            setError(signInError.message)
+          }
+        }
+        return
+      }
+      
+      if (!data?.session) {
+        console.error("No session returned after login")
+        setError("Authentication failed. Please try again.")
         return
       }
       
       console.log("Login successful, redirecting...")
-      router.push("/dashboard")
+      
+      await router.push("/dashboard")
     } catch (err: any) {
       console.error("Unexpected error:", err)
       setError("An unexpected error occurred. Please try again.")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const setupDemoUser = async () => {
+    if (!isDevelopment) return
+    
+    try {
+      setSettingUpDemo(true)
+      setError(null)
+      
+      const response = await fetch('/api/setup-demo', {
+        method: 'POST',
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to set up demo user')
+      }
+      
+      // Auto-fill the demo credentials
+      setEmail('demo@example.com')
+      setPassword('password123')
+      
+      // Show success message
+      setMessage('Demo user created! Please check your email to confirm your account.')
+      setMessageType('success')
+      
+      // Try to sign in after a short delay
+      setTimeout(async () => {
+        try {
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: 'demo@example.com',
+            password: 'password123',
+          })
+          
+          if (signInError) {
+            if (signInError.message.includes('Email not confirmed')) {
+              setMessage('Please check your email to confirm your account before signing in.')
+              setMessageType('warning')
+            } else {
+              setError(signInError.message)
+            }
+          }
+        } catch (e) {
+          console.error('Sign in error:', e)
+          setError('Failed to sign in with demo account')
+        }
+      }, 2000)
+    } catch (e) {
+      console.error('Setup error:', e)
+      setError(e instanceof Error ? e.message : 'Failed to set up demo user')
+    } finally {
+      setSettingUpDemo(false)
     }
   }
 
@@ -72,6 +238,12 @@ export default function LoginPageClient() {
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
               {error}
+            </div>
+          )}
+          
+          {success && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-md text-sm">
+              {success}
             </div>
           )}
           
@@ -189,6 +361,20 @@ export default function LoginPageClient() {
           <strong>Demo Credentials:</strong><br />
           Email: demo@example.com<br />
           Password: password123
+          
+          {isDevelopment && (
+            <div className="mt-2">
+              <Button 
+                onClick={setupDemoUser} 
+                disabled={settingUpDemo} 
+                variant="outline" 
+                className="w-full text-xs"
+              >
+                {settingUpDemo ? "Setting up demo..." : "Setup Demo User in Supabase"}
+              </Button>
+              <p className="text-xs mt-1">This will create a demo user and organization in your local Supabase instance</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

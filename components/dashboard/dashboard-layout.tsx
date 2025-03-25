@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useParams, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import {
   BarChart3,
@@ -41,6 +41,7 @@ import AIAssistant from "@/components/dashboard/ai-assistant"
 import { useToast } from "@/hooks/use-toast"
 import Sidebar from "@/components/dashboard/sidebar"
 import Header from "@/components/dashboard/header"
+import TestAuth from "@/components/test-auth"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -68,19 +69,19 @@ type UserProfile = {
 
 async function fetchUserProfile(): Promise<UserProfile | null> {
   try {
-    const { data: authData, error: authError } = await supabase.auth.getUser()
+    const { data: session, error: sessionError } = await supabase.auth.getSession()
     
-    if (authError) {
-      console.error('Error fetching auth user:', authError)
+    if (sessionError) {
+      console.error('Error getting session:', sessionError)
       return null
     }
     
-    if (!authData || !authData.user) {
-      console.log('No authenticated user found')
+    if (!session?.session?.user) {
+      console.log('No active session found')
       return null
     }
     
-    const user = authData.user
+    const user = session.session.user
     
     // Fetch profile
     const { data: profile, error: profileError } = await supabase
@@ -133,6 +134,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [loadingUser, setLoadingUser] = useState(false)
   const [loadingOrgs, setLoadingOrgs] = useState(false)
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [currentOrganization, setCurrentOrganization] = useState<OrganizationWithRole | null>(null)
+  const [showWelcome, setShowWelcome] = useState(false)
+  const params = useParams()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('welcome') === 'true') {
+      setShowWelcome(true)
+      // Remove welcome parameter after reading it
+      const newUrl = new URL(window.location.href)
+      newUrl.searchParams.delete('welcome')
+      window.history.replaceState({}, '', newUrl.toString())
+    }
+  }, [searchParams])
 
   // Fetch user profile and organizations
   useEffect(() => {
@@ -146,6 +162,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         } else {
           console.log("No user profile found, will need to create one")
           // We'll handle this gracefully - the settings page will prompt them to create a profile
+          setUserProfile({
+            full_name: "New User",
+            email: "",
+            job_title: "",
+            notification_settings: {
+              emailSummary: true,
+              newUploads: true,
+              teamChanges: true,
+              emissionAlerts: true,
+              productUpdates: false,
+            }
+          })
         }
       } catch (error) {
         console.error("Error fetching user data:", error)
@@ -170,24 +198,32 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const fetchUserOrganizations = async () => {
       try {
         setLoadingOrgs(true)
-        const orgs = await getCurrentUserOrganizations()
-        console.log("Fetched organizations:", orgs)
-        setOrganizations(orgs)
+        const orgs = await getCurrentUserOrganizations().catch(error => {
+          console.error("Error in getCurrentUserOrganizations:", error)
+          return []
+        })
         
-        if (orgs.length > 0) {
+        console.log("Fetched organizations:", orgs)
+        setOrganizations(orgs || [])
+        
+        if (orgs && orgs.length > 0) {
           const firstOrg = orgs[0]
           setSelectedOrganization(firstOrg)
           localStorage.setItem('selectedOrganizationId', firstOrg.id)
           
           // Check if this is a demo organization with a trial
           if (firstOrg.is_demo && firstOrg.trial_ends_at) {
-            const trialEndDate = new Date(firstOrg.trial_ends_at);
-            const today = new Date();
-            const timeDiff = trialEndDate.getTime() - today.getTime();
-            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-            
-            if (daysDiff > 0) {
-              setDaysRemaining(daysDiff);
+            try {
+              const trialEndDate = new Date(firstOrg.trial_ends_at);
+              const today = new Date();
+              const timeDiff = trialEndDate.getTime() - today.getTime();
+              const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+              
+              if (daysDiff > 0) {
+                setDaysRemaining(daysDiff);
+              }
+            } catch (e) {
+              console.error("Error calculating trial days:", e);
             }
           }
         } else {
@@ -274,6 +310,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           onOrganizationChange={handleOrganizationChange}
         />
         <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
+          {/* Auth debug component - remove in production */}
+          <div className="mb-4">
+            <TestAuth />
+          </div>
+          
           {organizations.length === 0 && pathname !== '/dashboard/settings' ? (
             <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 mb-4">
               <div className="flex items-center space-x-3">
@@ -292,7 +333,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           ) : null}
           
-          {daysRemaining !== null && (
+          {daysRemaining !== null && daysRemaining > 0 && (
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 mb-4">
               <div className="flex items-center space-x-3">
                 <FileUp className="h-5 w-5 text-blue-600" />
@@ -305,6 +346,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   </p>
                 </div>
               </div>
+            </div>
+          )}
+          
+          {!selectedOrganization && showWelcome && (
+            <div className="flex flex-col justify-center items-center p-8 text-center max-w-2xl mx-auto">
+              <h1 className="text-2xl font-bold mb-4">Welcome to the platform!</h1>
+              <p className="text-gray-500 mb-6">Your account has been created successfully and we've set up a starter organization for you. Take a moment to explore the dashboard and get familiar with the features.</p>
+              <Button onClick={() => router.push('/dashboard/settings?tab=organization')} className="mb-2">
+                Complete Your Organization Setup
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/dashboard/settings?tab=profile')}>
+                Complete Your Profile
+              </Button>
             </div>
           )}
           

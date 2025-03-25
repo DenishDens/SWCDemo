@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Incident } from "@/lib/types/incident"
-import IncidentCard from "./incident-card"
+import { IncidentCard } from "./incident-card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ArrowLeft, ArrowRight } from "lucide-react"

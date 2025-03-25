@@ -619,6 +619,7 @@ export default function SettingsManager() {
           .insert({
             name: newOrgData.name,
             slug: slug,
+            is_demo: false, // Explicitly set as not a demo organization
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
@@ -627,12 +628,108 @@ export default function SettingsManager() {
 
         if (createError) {
           console.error('Error creating organization:', createError)
-          toast({
-            title: "Error",
-            description: createError.message || "Failed to create organization",
-            variant: "destructive"
-          })
-          return
+          
+          // Check if the error is due to a missing column
+          if (createError.message?.includes('column "is_demo" of relation "organizations" does not exist')) {
+            // Try again without the is_demo field
+            const { data: orgRetry, error: retryError } = await supabase
+              .from('organizations')
+              .insert({
+                name: newOrgData.name,
+                slug: slug,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .select('*')
+              .single()
+              
+            if (retryError) {
+              console.error('Error in retry creating organization:', retryError)
+              toast({
+                title: "Error",
+                description: retryError.message || "Failed to create organization",
+                variant: "destructive"
+              })
+              return
+            }
+            
+            if (!orgRetry) {
+              toast({
+                title: "Error",
+                description: "Failed to create organization - no data returned",
+                variant: "destructive"
+              })
+              return
+            }
+            
+            // Continue with the retry data
+            const newOrg = { 
+              id: orgRetry.id,
+              name: orgRetry.name,
+              slug: orgRetry.slug,
+              created_at: orgRetry.created_at,
+              updated_at: orgRetry.updated_at,
+              role: 'owner' as const,
+              is_demo: false
+            }
+            
+            // Add the member as owner
+            const { error: memberError } = await supabase
+              .from('organization_members')
+              .insert({
+                organization_id: orgRetry.id,
+                user_id: user.id,
+                role: 'owner',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+            
+            if (memberError) {
+              console.error('Error adding member:', memberError)
+              
+              // If we couldn't add the member, we should delete the org
+              await supabase
+                .from('organizations')
+                .delete()
+                .eq('id', orgRetry.id)
+                
+              toast({
+                title: "Error",
+                description: memberError.message || "Failed to add user to organization",
+                variant: "destructive"
+              })
+              return
+            }
+            
+            // Update local state immediately
+            setOrganizations(prev => [...prev, newOrg])
+            
+            // Close dialogs
+            setIsCreateOrgDialogOpen(false)
+            setShowOrgChoice(false)
+            
+            // Reset form
+            setNewOrgData({
+              name: "",
+              slug: ""
+            })
+            
+            toast({
+              title: "Success",
+              description: `Created organization ${orgRetry.name} successfully`,
+            })
+            
+            // Refresh organizations
+            await fetchUserOrganizations()
+            return
+          } else {
+            toast({
+              title: "Error",
+              description: createError.message || "Failed to create organization",
+              variant: "destructive"
+            })
+            return
+          }
         }
 
         if (!org) {
@@ -680,7 +777,8 @@ export default function SettingsManager() {
           slug: org.slug,
           created_at: org.created_at,
           updated_at: org.updated_at,
-          role: 'owner' 
+          role: 'owner',
+          is_demo: false
         }
         setOrganizations(prev => [...prev, newOrg])
         

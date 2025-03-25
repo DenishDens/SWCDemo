@@ -1,60 +1,57 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import type { SupabaseClient } from "@supabase/supabase-js"
 
-async function createDemoOrganization(supabase: any, userId: string, userName: string) {
-  const orgName = `${userName}'s Demo Organization`
-  // Generate slug from name (lowercase, replace non-alphanumeric with dash)
-  const slug = orgName.toLowerCase().replace(/[^a-z0-9]/g, '-')
+// Helper function to create a demo organization for a new user
+async function createDemoOrganization(
+  supabase: SupabaseClient,
+  userId: string,
+  userName: string
+) {
+  // Create the organization
+  const orgName = `${userName}'s Organization`
   
-  try {
-    // Create the organization
-    const { data: organization, error: orgError } = await supabase
-      .from('organizations')
-      .insert({ 
-        name: orgName, 
-        slug,
-        is_demo: true,
-        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .select()
-      .single()
-
-    if (orgError) {
-      console.error('Error creating demo organization:', orgError)
-      throw orgError
-    }
-
-    // Add user as owner
-    const { error: memberError } = await supabase
-      .from('organization_members')
-      .insert({
-        organization_id: organization.id,
-        user_id: userId,
-        role: 'owner',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-
-    if (memberError) {
-      console.error('Error adding user as owner:', memberError)
-      
-      // If membership creation fails, clean up by deleting the organization
-      await supabase
-        .from('organizations')
-        .delete()
-        .eq('id', organization.id)
-        
-      throw memberError
-    }
-
-    return organization
-  } catch (error) {
-    console.error('Failed to create demo organization:', error)
-    return null
+  const { data: organization, error: createOrgError } = await supabase
+    .from('organizations')
+    .insert({
+      name: orgName,
+      created_by: userId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_personal: true,
+      plan: 'free',
+      settings: {
+        showTutorial: true,
+        defaultView: 'list',
+        theme: 'system'
+      }
+    })
+    .select('id')
+    .single()
+    
+  if (createOrgError) {
+    console.error('Error creating demo organization:', createOrgError.message)
+    throw createOrgError
   }
+  
+  // Add the user as an admin to the organization
+  const { error: memberError } = await supabase
+    .from('organization_members')
+    .insert({
+      organization_id: organization.id,
+      user_id: userId,
+      role: 'admin',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    
+  if (memberError) {
+    console.error('Error adding user to organization:', memberError.message)
+    throw memberError
+  }
+  
+  return organization
 }
 
 export async function GET(request: Request) {
@@ -62,29 +59,47 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code')
   let isNewUser = false
 
-  if (code) {
+  if (!code) {
+    // No code parameter, redirect to login
+    console.error('No code provided in auth callback')
+    return NextResponse.redirect(new URL('/login?error=missing_code', request.url))
+  }
+
+  try {
     const cookieStore = cookies()
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
     // Exchange the code for a session
-    await supabase.auth.exchangeCodeForSession(code)
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
-    // Get the newly authenticated user
-    const { data: { user }, error } = await supabase.auth.getUser()
+    if (exchangeError) {
+      console.error('Error exchanging code for session:', exchangeError.message)
+      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(exchangeError.message)}`, request.url))
+    }
 
-    if (!error && user) {
-      // Check if the user has a profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single()
+    // Get the newly authenticated user from session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-      // If the user doesn't have a profile, create one
-      if (profileError && profileError.code === 'PGRST116') {
-        // This is a new user
-        isNewUser = true
+    if (sessionError || !session) {
+      console.error('Error getting session after code exchange:', sessionError?.message || 'No session created')
+      return NextResponse.redirect(new URL('/login?error=session_error', request.url))
+    }
 
+    const user = session.user
+
+    // Check if the user has a profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    // If the user doesn't have a profile, create one
+    if (profileError && profileError.code === 'PGRST116') {
+      // This is a new user
+      isNewUser = true
+
+      try {
         // Extract name from user metadata or use default
         const fullName = user.user_metadata?.full_name || 
                          user.user_metadata?.name || 
@@ -92,7 +107,7 @@ export async function GET(request: Request) {
                          'User'
 
         // Create default profile
-        await supabase
+        const { error: createProfileError } = await supabase
           .from('profiles')
           .insert({
             id: user.id,
@@ -108,30 +123,50 @@ export async function GET(request: Request) {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
-      }
 
-      // Check if user has any organizations
-      const { data: orgMemberships, error: orgError } = await supabase
-        .from('organization_members')
-        .select('id')
-        .eq('user_id', user.id)
-        .limit(1)
-
-      if (!orgError && (!orgMemberships || orgMemberships.length === 0)) {
-        // User has no organizations - create a demo organization
-        isNewUser = true
-        
-        // Extract name for organization
-        const fullName = user.user_metadata?.full_name || 
-                         user.user_metadata?.name || 
-                         user.email?.split('@')[0] || 
-                         'User'
-                         
-        await createDemoOrganization(supabase, user.id, fullName)
+        if (createProfileError) {
+          console.error('Error creating profile:', createProfileError.message)
+          // Continue anyway - the user can set up their profile later
+        }
+      } catch (profileCreationError) {
+        console.error('Unexpected error creating profile:', profileCreationError)
+        // Continue anyway - the user can set up their profile later
       }
     }
-  }
 
-  // Redirect to the dashboard (no need to send to settings since we've created an org)
-  return NextResponse.redirect(new URL('/dashboard', request.url))
+    // Check if user has any organizations
+    const { data: orgMemberships, error: orgError } = await supabase
+      .from('organization_members')
+      .select('id')
+      .eq('user_id', user.id)
+      .limit(1)
+
+    if (!orgError && (!orgMemberships || orgMemberships.length === 0)) {
+      // User has no organizations - create a demo organization
+      isNewUser = true
+      
+      try {
+        // Extract name for organization
+        const fullName = user.user_metadata?.full_name || 
+                        user.user_metadata?.name || 
+                        user.email?.split('@')[0] || 
+                        'User'
+                        
+        await createDemoOrganization(supabase, user.id, fullName)
+      } catch (demoOrgError) {
+        console.error('Error creating demo organization:', demoOrgError)
+        // Continue anyway - the user can create an organization later
+      }
+    }
+
+    // Redirect to the dashboard with success message
+    const redirectUrl = new URL('/dashboard', request.url)
+    if (isNewUser) {
+      redirectUrl.searchParams.set('welcome', 'true')
+    }
+    return NextResponse.redirect(redirectUrl)
+  } catch (error) {
+    console.error('Unexpected error in auth callback:', error)
+    return NextResponse.redirect(new URL('/login?error=auth_callback_error', request.url))
+  }
 } 

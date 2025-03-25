@@ -54,12 +54,20 @@ type DatabaseOrganizationMember = {
 
 export async function getCurrentUserOrganizations(): Promise<OrganizationWithRole[]> {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // Get user from session instead of direct call to better handle browser environment
+    const { data: session, error: sessionError } = await supabase.auth.getSession()
     
-    if (authError || !user || !user.id) {
-      console.error('Auth error or no user found:', authError || 'No valid user')
+    if (sessionError) {
+      console.error('Error getting session:', sessionError)
       return []
     }
+    
+    if (!session?.session?.user) {
+      console.log('No active session found')
+      return []
+    }
+    
+    const user = session.session.user
     
     const { data: memberships, error: membershipError } = await supabase
       .from('organization_members')
@@ -108,52 +116,115 @@ export async function createOrganization(name: string): Promise<Organization> {
     // Generate slug from name
     const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-')
     
-    // Create the organization
-    const { data: organization, error: orgError } = await supabase
-      .from('organizations')
-      .insert({ 
-        name, 
-        slug,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .select()
-      .single()
+    // Try creating with is_demo field first
+    try {
+      const { data: organization, error: orgError } = await supabase
+        .from('organizations')
+        .insert({ 
+          name, 
+          slug,
+          is_demo: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single()
 
-    if (orgError) {
-      console.error('Error creating organization:', orgError)
-      throw orgError
+      if (orgError) {
+        // If the error is due to missing columns, handle it separately
+        if (orgError.message?.includes('column "is_demo" of relation "organizations" does not exist')) {
+          throw new Error('column_missing')
+        }
+        console.error('Error creating organization:', orgError)
+        throw orgError
+      }
+
+      if (!organization) {
+        throw new Error('Failed to create organization - no data returned')
+      }
+
+      // Get current user from session
+      const { data: session, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError || !session?.session?.user) {
+        console.error('Error getting session:', sessionError)
+        throw new Error('Failed to get current user')
+      }
+
+      const user = session.session.user
+
+      // Add creator as owner
+      const { error: memberError } = await supabase
+        .from('organization_members')
+        .insert({
+          organization_id: organization.id,
+          user_id: user.id,
+          role: 'owner',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+
+      if (memberError) {
+        console.error('Error adding user as owner:', memberError)
+        throw memberError
+      }
+
+      return organization
+    } catch (error) {
+      // Handle missing columns
+      if (error instanceof Error && error.message === 'column_missing') {
+        // Retry without the is_demo field
+        const { data: organization, error: orgError } = await supabase
+          .from('organizations')
+          .insert({ 
+            name, 
+            slug,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single()
+
+        if (orgError) {
+          console.error('Error creating organization (retry):', orgError)
+          throw orgError
+        }
+
+        if (!organization) {
+          throw new Error('Failed to create organization - no data returned')
+        }
+
+        // Get current user from session
+        const { data: session, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError || !session?.session?.user) {
+          console.error('Error getting session:', sessionError)
+          throw new Error('Failed to get current user')
+        }
+
+        const user = session.session.user
+
+        // Add creator as owner
+        const { error: memberError } = await supabase
+          .from('organization_members')
+          .insert({
+            organization_id: organization.id,
+            user_id: user.id,
+            role: 'owner',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+
+        if (memberError) {
+          console.error('Error adding user as owner:', memberError)
+          throw memberError
+        }
+
+        return organization
+      } else {
+        throw error;
+      }
     }
-
-    if (!organization) {
-      throw new Error('Failed to create organization - no data returned')
-    }
-
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
-    if (userError || !user) {
-      console.error('Error getting user:', userError)
-      throw new Error('Failed to get current user')
-    }
-
-    // Add creator as owner
-    const { error: memberError } = await supabase
-      .from('organization_members')
-      .insert({
-        organization_id: organization.id,
-        user_id: user.id,
-        role: 'owner',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-
-    if (memberError) {
-      console.error('Error adding user as owner:', memberError)
-      throw memberError
-    }
-
-    return organization
   } catch (error) {
     console.error('Error in createOrganization:', error)
     throw error
@@ -232,7 +303,14 @@ export async function removeMember(memberId: string): Promise<void> {
 }
 
 export async function leaveOrganization(organizationId: string): Promise<void> {
-  const userId = (await supabase.auth.getUser()).data.user?.id
+  const { data: session, error: sessionError } = await supabase.auth.getSession()
+  
+  if (sessionError || !session?.session?.user) {
+    console.error('Error getting session:', sessionError)
+    throw new Error('Failed to get current user')
+  }
+
+  const userId = session.session.user.id
   
   const { error } = await supabase
     .from('organization_members')
@@ -256,17 +334,15 @@ export async function generateOrganizationInviteCode(organizationId: string): Pr
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
     
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Get current user from session
+    const { data: session, error: sessionError } = await supabase.auth.getSession();
     
-    if (userError) {
-      console.error('Error getting user:', userError);
+    if (sessionError || !session?.session?.user) {
+      console.error('Error getting session:', sessionError)
       throw new Error('Failed to authenticate user');
     }
     
-    if (!user) {
-      throw new Error('You must be logged in to generate invite codes');
-    }
+    const user = session.session.user;
     
     // Create the invite record
     const { data, error } = await supabase
